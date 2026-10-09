@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        /* ── Redmine color palette ─────────────────────────── */
+        /* ── Redmine color palette – Light ─────────────────── */
         :root {
             --rm-nav:      #3D4B5A;
             --rm-nav-dark: #2e3a47;
@@ -18,6 +18,32 @@
             --rm-blue-btn-hover: #4A7399;
             --rm-active:   #F0A500;
             --rm-bg:       #f4f4f4;
+            /* UI tokens */
+            --bg-page:     #f4f4f4;
+            --bg-card:     #ffffff;
+            --bg-card-alt: #f9fafb;
+            --border:      #e5e7eb;
+            --border-input:#c8c8c8;
+            --text-primary:#111827;
+            --text-secondary:#6b7280;
+            --text-muted:  #9ca3af;
+        }
+
+        /* ── Dark mode ─────────────────────────────────────── */
+        .dark {
+            --rm-nav:      #1e2a35;
+            --rm-nav-dark: #151e26;
+            --rm-blue:     #7BB3D4;
+            --rm-blue-btn: #4A7399;
+            --rm-blue-btn-hover: #3D6180;
+            --bg-page:     #0f172a;
+            --bg-card:     #1e293b;
+            --bg-card-alt: #162032;
+            --border:      #334155;
+            --border-input:#475569;
+            --text-primary:#f1f5f9;
+            --text-secondary:#94a3b8;
+            --text-muted:  #64748b;
         }
 
         /* ── HTMX indicator ────────────────────────────────── */
@@ -142,14 +168,76 @@
         .project-nav a:hover { color: #1f2937; border-color: #9ca3af; }
         .project-nav a.active { color: var(--rm-blue); font-weight: 600; border-color: var(--rm-blue); }
 
-        /* ── Redmine-style page background ───────────────── */
-        body { background-color: var(--rm-bg); }
+        /* ── Page background ──────────────────────────────── */
+        body { background-color: var(--bg-page); color: var(--text-primary); }
+
+        /* ── Dark-aware cards / borders ───────────────────── */
+        .card { background: var(--bg-card); border-color: var(--border); }
+
+        /* ── Form fields – dark ────────────────────────────── */
+        .dark input[type="text"],
+        .dark input[type="email"],
+        .dark input[type="password"],
+        .dark input[type="number"],
+        .dark input[type="date"],
+        .dark input[type="url"],
+        .dark input[type="search"],
+        .dark textarea,
+        .dark select {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+        .dark input[type="text"]:focus,
+        .dark input[type="email"]:focus,
+        .dark input[type="password"]:focus,
+        .dark input[type="number"]:focus,
+        .dark input[type="date"]:focus,
+        .dark input[type="url"]:focus,
+        .dark input[type="search"]:focus,
+        .dark textarea:focus,
+        .dark select:focus {
+            border-color: #5D8AB4;
+            box-shadow: 0 0 0 3px rgba(93,138,180,0.25);
+        }
+        .dark select option { background: #1e293b; }
+
+        /* ── Dark Tailwind overrides ───────────────────────── */
+        .dark .bg-white        { background-color: var(--bg-card) !important; }
+        .dark .bg-gray-50      { background-color: var(--bg-card-alt) !important; }
+        .dark .bg-gray-100     { background-color: #1e293b !important; }
+        .dark .border-gray-100,
+        .dark .border-gray-200,
+        .dark .border-gray-300 { border-color: var(--border) !important; }
+        .dark .text-gray-900   { color: #f1f5f9 !important; }
+        .dark .text-gray-800   { color: #e2e8f0 !important; }
+        .dark .text-gray-700   { color: #cbd5e1 !important; }
+        .dark .text-gray-600   { color: #94a3b8 !important; }
+        .dark .text-gray-500   { color: #64748b !important; }
+        .dark .text-gray-400   { color: #475569 !important; }
+        .dark .divide-gray-50 > * + * { border-color: #1e293b !important; }
+        .dark .shadow-sm       { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
+        .dark .hover\:bg-gray-50:hover { background-color: #1e293b !important; }
+        .dark .hover\:bg-indigo-50\/30:hover,
+        .dark .hover\:bg-indigo-50\/40:hover { background-color: rgba(30,41,59,0.5) !important; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
+<script>
+    // Appliquer le mode avant le rendu pour éviter le flash
+    (function() {
+        const mode = localStorage.getItem('theme') || 'dark';
+        if (mode === 'dark') document.documentElement.classList.add('dark');
+    })();
+</script>
 <body
-    class="text-gray-900 min-h-screen flex flex-col"
+    class="min-h-screen flex flex-col"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+    x-data="{ dark: localStorage.getItem('theme') !== 'light' }"
+    x-init="$watch('dark', v => {
+        localStorage.setItem('theme', v ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', v);
+    })"
 >
 
 <!-- ─── Top navigation bar ──────────────────────────────── -->
@@ -179,6 +267,24 @@
 
     <!-- Right side -->
     <div class="ml-auto flex items-center gap-1" x-data="{ open: false }">
+
+        <!-- Dark / Light toggle -->
+        <button @click="dark = !dark"
+                class="p-2 rounded text-gray-400 hover:text-white transition-colors"
+                :title="dark ? 'Passer en mode clair' : 'Passer en mode sombre'">
+            <!-- Soleil (light) -->
+            <svg x-show="dark" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+            <!-- Lune (dark) -->
+            <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+        </button>
 
         <!-- Bell / notifications -->
         <a href="{% url 'my:notifications' %}"

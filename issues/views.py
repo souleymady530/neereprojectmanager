@@ -255,6 +255,99 @@ class IssueWatchToggleView(LoginRequiredMixin, View):
         return redirect(issue.get_absolute_url())
 
 
+class IssueImportView(ProjectPermissionRequiredMixin, View):
+    """Import de tickets depuis un fichier Excel (.xlsx)."""
+    permission_required = "add_issues"
+    template_name = "issues/import.html"
+
+    def get(self, request, identifier):
+        from .import_excel import build_template_xlsx
+        if "download_template" in request.GET:
+            from django.http import HttpResponse
+            xlsx = build_template_xlsx()
+            resp = HttpResponse(
+                xlsx,
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            resp["Content-Disposition"] = 'attachment; filename="modele_tickets.xlsx"'
+            return resp
+        columns = [
+            "Sujet *", "Description", "Tracker", "Priorité", "Statut",
+            "Assigné à", "Date début", "Date échéance",
+            "Heures estimées", "Avancement", "Version cible",
+        ]
+        return render(request, self.template_name, {"project": self.project, "columns": columns})
+
+    def post(self, request, identifier):
+        from .import_excel import parse_excel, save_rows
+
+        # ── Étape 2 : confirmation et sauvegarde ──────────────────
+        if request.POST.get("action") == "confirm":
+            import json
+            raw = request.session.pop("import_rows", None)
+            if not raw:
+                messages.error(request, "Session expirée. Veuillez relancer l'import.")
+                return redirect(request.path)
+
+            from .import_excel import ImportResult, ImportRow
+            result = ImportResult()
+            for r in raw:
+                result.rows.append(ImportRow(
+                    row_num=r["row_num"],
+                    data=r["data"],
+                    errors=r["errors"],
+                    warnings=r["warnings"],
+                ))
+
+            created, skipped, warns = save_rows(result, self.project, request.user)
+            for w in warns:
+                messages.warning(request, w)
+            messages.success(
+                request,
+                f"{created} ticket{'s' if created > 1 else ''} importé{'s' if created > 1 else ''}."
+                + (f" {skipped} ligne{'s' if skipped > 1 else ''} ignorée{'s' if skipped > 1 else ''}." if skipped else ""),
+            )
+            return redirect(reverse("projects:issue_list", kwargs={"identifier": self.project.identifier}))
+
+        # ── Étape 1 : parse et prévisualisation ───────────────────
+        uploaded = request.FILES.get("excel_file")
+        if not uploaded:
+            messages.error(request, "Aucun fichier sélectionné.")
+            return render(request, self.template_name, {"project": self.project})
+
+        if not uploaded.name.endswith((".xlsx", ".xlsm")):
+            messages.error(request, "Format non supporté. Utilisez un fichier .xlsx.")
+            return render(request, self.template_name, {"project": self.project})
+
+        result = parse_excel(uploaded)
+
+        if result.parse_error:
+            messages.error(request, result.parse_error)
+            return render(request, self.template_name, {"project": self.project})
+
+        # Stocker les lignes parsées en session pour la confirmation
+        request.session["import_rows"] = [
+            {
+                "row_num": r.row_num,
+                "data": {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in r.data.items()},
+                "errors": r.errors,
+                "warnings": r.warnings,
+            }
+            for r in result.rows
+        ]
+
+        valid   = [r for r in result.rows if r.is_valid]
+        invalid = [r for r in result.rows if not r.is_valid]
+
+        return render(request, self.template_name, {
+            "project": self.project,
+            "preview": True,
+            "valid_rows": valid,
+            "invalid_rows": invalid,
+            "total": len(result.rows),
+        })
+
+
 class KanbanView(LoginRequiredMixin, View):
     """Tableau Kanban : colonnes = statuts ouverts, cartes = tickets."""
 

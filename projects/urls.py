@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from issues.views import IssueListView, IssueCreateView, KanbanView
+from issues.views import IssueListView, IssueCreateView, KanbanView, IssueImportView
 from versions.views import RoadmapView, VersionCreateView, VersionUpdateView, VersionDeleteView
 from timetracking.views import TimeEntryListView, TimeEntryCreateView, TimeReportView
 from wiki import views as wiki_views
@@ -22,6 +22,7 @@ urlpatterns = [
     path("<slug:identifier>/issues/", KanbanView.as_view(), name="issue_list"),
     path("<slug:identifier>/issues/list/", IssueListView.as_view(), name="issue_list_table"),
     path("<slug:identifier>/issues/new/", IssueCreateView.as_view(), name="issue_create"),
+    path("<slug:identifier>/issues/import/", IssueImportView.as_view(), name="issue_import"),
     # Temps
     path("<slug:identifier>/time_entries/", TimeEntryListView.as_view(), name="time_entries"),
     path("<slug:identifier>/time_entries/new/", TimeEntryCreateView.as_view(), name="time_entry_create"),

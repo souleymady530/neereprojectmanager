@@ -28,6 +28,13 @@
                   style="background-color: var(--rm-blue-btn);">Liste</span>
         </div>
     {% if project %}
+    <a href="{% url 'projects:issue_import' project.identifier %}" class="btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        Importer Excel
+    </a>
     <a href="{% url 'projects:issue_create' project.identifier %}" class="btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
