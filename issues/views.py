@@ -255,6 +255,48 @@ class IssueWatchToggleView(LoginRequiredMixin, View):
         return redirect(issue.get_absolute_url())
 
 
+class IssueDuplicateView(LoginRequiredMixin, View):
+    """Crée une copie d'un ticket existant (même projet, nouveau numéro)."""
+
+    def post(self, request, pk):
+        original = get_object_or_404(Issue.objects.visible_to(request.user), pk=pk)
+        user_perms = get_user_project_permissions(request.user, original.project)
+        if "add_issues" not in user_perms:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+
+        new_issue = Issue.objects.create(
+            project=original.project,
+            tracker=original.tracker,
+            subject=f"Copie de : {original.subject}",
+            description=original.description,
+            status=original.status,
+            priority=original.priority,
+            author=request.user,
+            assigned_to=original.assigned_to,
+            fixed_version=original.fixed_version,
+            start_date=original.start_date,
+            due_date=original.due_date,
+            estimated_hours=original.estimated_hours,
+            done_ratio=0,
+            parent=original.parent,
+        )
+        # Copier les champs personnalisés
+        from customfields.models import CustomFieldValue
+        for cfv in CustomFieldValue.objects.filter(issue=original):
+            CustomFieldValue.objects.create(
+                issue=new_issue, custom_field=cfv.custom_field, value=cfv.value
+            )
+
+        Journal.objects.create(
+            issue=new_issue,
+            user=request.user,
+            notes=f"Ticket dupliqué depuis #{original.pk}.",
+        )
+        messages.success(request, f"Ticket #{new_issue.pk} créé comme copie de #{original.pk}.")
+        return redirect(new_issue.get_absolute_url())
+
+
 class IssueImportView(ProjectPermissionRequiredMixin, View):
     """Import de tickets depuis un fichier Excel (.xlsx)."""
     permission_required = "add_issues"

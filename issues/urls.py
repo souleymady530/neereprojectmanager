@@ -16,4 +16,5 @@ urlpatterns = [
     path("<int:pk>/done-ratio/", views.IssueDoneRatioUpdateView.as_view(), name="update_done_ratio"),
     path("<int:pk>/watch/", views.IssueWatchToggleView.as_view(), name="watch_toggle"),
     path("<int:pk>/move/", views.KanbanMoveView.as_view(), name="kanban_move"),
+    path("<int:pk>/duplicate/", views.IssueDuplicateView.as_view(), name="duplicate"),
 ]
