@@ -77,10 +77,24 @@ class MyPageView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         from timetracking.models import TimeEntry
-        from django.db.models import Sum
+        from issues.models import Watcher
+        from django.db.models import Sum, Count
         import datetime
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
+
+        # Décomptes précis pour les stat cards
+        ctx["assigned_open_count"] = Issue.objects.filter(
+            assigned_to=user, status__is_closed=False
+        ).count()
+        ctx["project_count"] = Membership.objects.filter(user=user).count()
+
+        # Tickets surveillés ouverts
+        ctx["watched_open_count"] = Watcher.objects.filter(
+            user=user, issue__status__is_closed=False
+        ).count()
+
+        # Tickets assignés pour l'affichage (liste limitée)
         ctx["assigned_issues"] = (
             Issue.objects.filter(assigned_to=user, status__is_closed=False)
             .select_related("project", "tracker", "status", "priority")
@@ -91,6 +105,7 @@ class MyPageView(LoginRequiredMixin, TemplateView):
             .select_related("project")
             .prefetch_related("roles")
         )
+
         # Saisies de temps récentes (7 derniers jours)
         week_ago = datetime.date.today() - datetime.timedelta(days=7)
         ctx["recent_time_entries"] = (
@@ -98,8 +113,9 @@ class MyPageView(LoginRequiredMixin, TemplateView):
             .select_related("project", "activity", "issue")
             .order_by("-spent_on", "-created_at")[:10]
         )
-        ctx["week_hours"] = (
+        raw_hours = (
             TimeEntry.objects.filter(user=user, spent_on__gte=week_ago)
             .aggregate(t=Sum("hours"))["t"] or 0
         )
+        ctx["week_hours"] = round(float(raw_hours), 1)
         return ctx
