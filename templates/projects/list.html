@@ -1,21 +1,37 @@
 {% extends "base.html" %}
 {% block title %}Projets{% endblock %}
 {% block content %}
+
 <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Projets</h1>
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Projets</h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ projects|length }} projet{{ projects|length|pluralize }}</p>
+    </div>
     <a href="{% url 'projects:create' %}"
-       class="bg-slate-700 text-white text-sm px-4 py-2 rounded hover:bg-slate-800">
-        + Nouveau projet
+       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouveau projet
     </a>
 </div>
 
 {% if projects %}
-<div class="space-y-2">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
     {% for project in projects %}
     {% include "projects/_project_row.html" with project=project depth=0 %}
     {% endfor %}
 </div>
 {% else %}
-<p class="text-gray-500">Aucun projet accessible.</p>
+<div class="text-center py-20">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+    </div>
+    <p class="text-gray-500 font-medium">Aucun projet accessible.</p>
+    <a href="{% url 'projects:create' %}" class="text-indigo-600 hover:underline text-sm mt-2 inline-block">Créer le premier projet</a>
+</div>
 {% endif %}
+
 {% endblock %}

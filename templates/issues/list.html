@@ -12,86 +12,129 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-bold">
-        Tickets{% if project %} – {{ project.name }}{% endif %}
-    </h1>
+<div class="flex items-center justify-between mb-5">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            Tickets{% if project %} — {{ project.name }}{% endif %}
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ page_obj.paginator.count }} ticket{{ page_obj.paginator.count|pluralize }} au total</p>
+    </div>
     {% if project %}
     <a href="{% url 'projects:issue_create' project.identifier %}"
-       class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700">
-        + Nouveau ticket
+       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouveau ticket
     </a>
     {% endif %}
 </div>
 
 <!-- Filtres -->
-<details class="bg-white rounded-xl shadow p-4 mb-4">
-    <summary class="cursor-pointer text-sm font-medium text-gray-600">Filtres</summary>
-    <form method="get" class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+<details class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5" {% if request.GET %}open{% endif %}>
+    <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none">
+        Filtres{% if request.GET %} <span class="text-indigo-600 font-normal">(actifs)</span>{% endif %}
+    </summary>
+    <form method="get" class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
         {% for field in filter.form %}
         <div>
-            <label class="block text-xs text-gray-500 mb-1">{{ field.label }}</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1">{{ field.label }}</label>
             {{ field }}
         </div>
         {% endfor %}
-        <div class="flex items-end gap-2 col-span-2 sm:col-span-4">
+        <div class="flex items-end gap-2 col-span-2 sm:col-span-3 lg:col-span-5">
             <button type="submit"
-                class="bg-slate-700 text-white px-4 py-1.5 rounded text-sm hover:bg-slate-800">
+                    class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors">
                 Filtrer
             </button>
-            <a href="?" class="text-sm text-gray-500 hover:underline">Réinitialiser</a>
+            <a href="?" class="px-4 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm rounded-lg transition-colors">
+                Réinitialiser
+            </a>
         </div>
     </form>
 </details>
 
-<!-- Tableau des tickets -->
-<div class="bg-white rounded-xl shadow overflow-hidden">
+<!-- Tableau -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <thead class="bg-gray-50 border-b border-gray-100">
             <tr>
-                <th class="px-4 py-2 text-left w-10">#</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">#</th>
                 {% if not project %}
-                <th class="px-4 py-2 text-left">Projet</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Projet</th>
                 {% endif %}
-                <th class="px-4 py-2 text-left">Tracker</th>
-                <th class="px-4 py-2 text-left">Sujet</th>
-                <th class="px-4 py-2 text-left">Statut</th>
-                <th class="px-4 py-2 text-left">Priorité</th>
-                <th class="px-4 py-2 text-left">Assigné à</th>
-                <th class="px-4 py-2 text-left">Mise à jour</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tracker</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Sujet</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Priorité</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Assigné</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Màj</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-50">
             {% for issue in issues %}
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 text-gray-400">{{ issue.pk }}</td>
+            <tr class="hover:bg-indigo-50/40 transition-colors group">
+                <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ issue.pk }}</td>
                 {% if not project %}
-                <td class="px-4 py-2">
+                <td class="px-4 py-3">
                     <a href="{{ issue.project.get_absolute_url }}"
-                       class="text-blue-600 hover:underline">{{ issue.project.name }}</a>
-                </td>
-                {% endif %}
-                <td class="px-4 py-2 text-gray-500">{{ issue.tracker }}</td>
-                <td class="px-4 py-2">
-                    <a href="{{ issue.get_absolute_url }}" class="hover:underline font-medium">
-                        {{ issue.subject }}
+                       class="text-indigo-600 hover:underline text-xs font-medium">
+                        {{ issue.project.name }}
                     </a>
                 </td>
-                <td class="px-4 py-2">
-                    <span class="px-2 py-0.5 rounded-full text-xs
-                        {% if issue.status.is_closed %}bg-gray-100 text-gray-500
-                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                {% endif %}
+                <td class="px-4 py-3">
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded font-medium">
+                        {{ issue.tracker }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 max-w-xs">
+                    <a href="{{ issue.get_absolute_url }}"
+                       class="font-medium text-gray-900 hover:text-indigo-700 group-hover:text-indigo-700 transition-colors line-clamp-1">
+                        {{ issue.subject }}
+                    </a>
+                    {% if issue.done_ratio > 0 %}
+                    <div class="mt-1 h-1 bg-gray-100 rounded-full w-24">
+                        <div class="h-1 rounded-full {% if issue.status.is_closed %}bg-green-400{% else %}bg-indigo-400{% endif %}"
+                             style="width: {{ issue.done_ratio }}%"></div>
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                        {% if issue.status.is_closed %}
+                            bg-green-50 text-green-700 border border-green-200
+                        {% else %}
+                            bg-blue-50 text-blue-700 border border-blue-200
+                        {% endif %}">
                         {{ issue.status }}
                     </span>
                 </td>
-                <td class="px-4 py-2">{{ issue.priority }}</td>
-                <td class="px-4 py-2 text-gray-500">{{ issue.assigned_to|default:"–" }}</td>
-                <td class="px-4 py-2 text-gray-400 text-xs">{{ issue.updated_at|date:"d/m/Y" }}</td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium"
+                          style="color: {{ issue.priority.color|default:'#6b7280' }}">
+                        <span class="w-1.5 h-1.5 rounded-full inline-block"
+                              style="background-color: {{ issue.priority.color|default:'#6b7280' }}"></span>
+                        {{ issue.priority }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-gray-500 text-xs">
+                    {{ issue.assigned_to.get_full_name|default:issue.assigned_to|default:"–" }}
+                </td>
+                <td class="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                    {{ issue.updated_at|date:"d/m/Y" }}
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="px-4 py-6 text-center text-gray-400">
-                    Aucun ticket trouvé.
+                <td colspan="8" class="px-4 py-12 text-center">
+                    <p class="text-gray-400 font-medium">Aucun ticket trouvé.</p>
+                    {% if project %}
+                    <a href="{% url 'projects:issue_create' project.identifier %}"
+                       class="text-indigo-600 hover:underline text-sm mt-1 inline-block">
+                        Créer le premier ticket
+                    </a>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -101,15 +144,21 @@
 
 <!-- Pagination -->
 {% if is_paginated %}
-<div class="flex justify-center gap-2 mt-4 text-sm">
+<div class="flex items-center justify-center gap-1 mt-5 text-sm">
     {% if page_obj.has_previous %}
     <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}"
-       class="px-3 py-1 rounded border hover:bg-gray-50">‹ Préc.</a>
+       class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">
+        ← Préc.
+    </a>
     {% endif %}
-    <span class="px-3 py-1">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    <span class="px-4 py-1.5 text-gray-500">
+        Page <strong>{{ page_obj.number }}</strong> / {{ page_obj.paginator.num_pages }}
+    </span>
     {% if page_obj.has_next %}
     <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}"
-       class="px-3 py-1 rounded border hover:bg-gray-50">Suiv. ›</a>
+       class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">
+        Suiv. →
+    </a>
     {% endif %}
 </div>
 {% endif %}

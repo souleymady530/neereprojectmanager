@@ -1,124 +1,194 @@
 {% extends "base.html" %}
-{% block title %}Mon tableau de bord{% endblock %}
+{% block title %}Tableau de bord{% endblock %}
 {% block content %}
+
+<!-- En-tête -->
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+        Bonjour, {{ user.first_name|default:user.username }} 👋
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">Votre tableau de bord personnel</p>
+</div>
+
+<!-- Stat cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Tickets assignés</div>
+        <div class="text-3xl font-bold text-gray-900">{{ assigned_issues|length }}</div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Mes projets</div>
+        <div class="text-3xl font-bold text-gray-900">{{ memberships|length }}</div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Heures cette semaine</div>
+        <div class="text-3xl font-bold text-indigo-600 font-mono">{{ week_hours|default:"0" }}h</div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Saisies récentes</div>
+        <div class="text-3xl font-bold text-gray-900">{{ recent_time_entries|length }}</div>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     <!-- Tickets assignés -->
-    <div class="lg:col-span-2">
-        <h2 class="text-lg font-semibold mb-3">Tickets qui me sont assignés</h2>
+    <div class="lg:col-span-2 space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900">Tickets qui me sont assignés</h2>
+            <a href="{% url 'issues:list' %}" class="text-xs text-indigo-600 hover:underline">Voir tout</a>
+        </div>
+
         {% if assigned_issues %}
-        <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                <thead class="bg-gray-50 border-b border-gray-100">
                     <tr>
-                        <th class="px-4 py-2 text-left">#</th>
-                        <th class="px-4 py-2 text-left">Projet</th>
-                        <th class="px-4 py-2 text-left">Sujet</th>
-                        <th class="px-4 py-2 text-left">Priorité</th>
-                        <th class="px-4 py-2 text-left">Statut</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Projet</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Sujet</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-50">
                     {% for issue in assigned_issues %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2 text-gray-400">{{ issue.pk }}</td>
-                        <td class="px-4 py-2">
-                            <a href="{{ issue.project.get_absolute_url }}" class="text-blue-600 hover:underline">
+                    <tr class="hover:bg-indigo-50/30 transition-colors">
+                        <td class="px-4 py-2.5 text-gray-400 font-mono text-xs">{{ issue.pk }}</td>
+                        <td class="px-4 py-2.5">
+                            <a href="{{ issue.project.get_absolute_url }}" class="text-xs text-indigo-600 hover:underline font-medium">
                                 {{ issue.project.name }}
                             </a>
                         </td>
-                        <td class="px-4 py-2">
-                            <a href="{{ issue.get_absolute_url }}" class="hover:underline font-medium">
-                                {{ issue.subject }}
+                        <td class="px-4 py-2.5">
+                            <a href="{{ issue.get_absolute_url }}" class="font-medium text-gray-800 hover:text-indigo-700 transition-colors">
+                                {{ issue.subject|truncatechars:50 }}
                             </a>
                         </td>
-                        <td class="px-4 py-2">{{ issue.priority }}</td>
-                        <td class="px-4 py-2">{{ issue.status }}</td>
+                        <td class="px-4 py-2.5">
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+                                {% if issue.status.is_closed %}bg-green-50 text-green-700 border border-green-200
+                                {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                                {{ issue.status }}
+                            </span>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <p class="text-gray-500 text-sm">Aucun ticket ouvert assigné.</p>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center">
+            <p class="text-gray-400 text-sm">Aucun ticket ouvert assigné.</p>
+        </div>
+        {% endif %}
+
+        <!-- Temps saisi cette semaine -->
+        <div class="flex items-center justify-between mt-6">
+            <h2 class="text-base font-semibold text-gray-900">Temps saisi cette semaine</h2>
+        </div>
+        {% if recent_time_entries %}
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Projet</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Ticket</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Activité</th>
+                        <th class="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Heures</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for te in recent_time_entries %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-2.5 text-gray-500 text-xs">{{ te.spent_on|date:"d/m" }}</td>
+                        <td class="px-4 py-2.5">
+                            <a href="{{ te.project.get_absolute_url }}" class="text-indigo-600 hover:underline text-xs">
+                                {{ te.project.name }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-2.5 text-gray-500 text-xs">
+                            {% if te.issue %}<a href="{{ te.issue.get_absolute_url }}" class="hover:underline">#{{ te.issue.pk }}</a>{% else %}–{% endif %}
+                        </td>
+                        <td class="px-4 py-2.5 text-gray-500 text-xs">{{ te.activity }}</td>
+                        <td class="px-4 py-2.5 text-right font-mono font-semibold text-gray-800">{{ te.hours }}h</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+            <p class="text-gray-400 text-sm">Aucune saisie cette semaine.</p>
+        </div>
         {% endif %}
     </div>
 
-    <!-- Mes projets -->
-    <div>
-        <h2 class="text-lg font-semibold mb-3">Mes projets</h2>
+    <!-- Sidebar : mes projets -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900">Mes projets</h2>
+            <a href="{% url 'projects:list' %}" class="text-xs text-indigo-600 hover:underline">Voir tout</a>
+        </div>
+
         {% if memberships %}
         <div class="space-y-2">
             {% for m in memberships %}
             <a href="{{ m.project.get_absolute_url }}"
-               class="block bg-white rounded-lg shadow px-4 py-3 hover:bg-gray-50">
-                <div class="font-medium">{{ m.project.name }}</div>
-                <div class="text-xs text-gray-400 mt-0.5">
-                    {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+               class="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:border-indigo-200 hover:shadow transition-all group">
+                <div class="min-w-0">
+                    <div class="font-medium text-sm text-gray-900 group-hover:text-indigo-700 transition-colors truncate">
+                        {{ m.project.name }}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-0.5">
+                        {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    </div>
                 </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300 group-hover:text-indigo-400 shrink-0 ml-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
             </a>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-gray-500 text-sm">Vous n'êtes membre d'aucun projet.</p>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+            <p class="text-gray-400 text-sm">Aucun projet.</p>
+        </div>
         {% endif %}
-        <div class="mt-4">
-            <a href="{% url 'projects:create' %}"
-               class="block text-center text-sm bg-slate-700 text-white py-2 rounded hover:bg-slate-800">
-                Nouveau projet
-            </a>
+
+        <a href="{% url 'projects:create' %}"
+           class="flex items-center justify-center gap-2 w-full text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-medium transition-colors shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nouveau projet
+        </a>
+
+        <!-- Liens rapides -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Accès rapide</h3>
+            <div class="space-y-1.5">
+                <a href="{% url 'my:profile' %}" class="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    Mon profil
+                </a>
+                <a href="{% url 'my:notifications' %}" class="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    Préférences notification
+                </a>
+                <a href="{% url 'issues:list' %}" class="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Tous les tickets
+                </a>
+            </div>
         </div>
     </div>
 
 </div>
-
-<!-- Temps saisi cette semaine -->
-<div class="mt-6">
-    <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold">
-            Temps saisi cette semaine
-            {% if week_hours %}
-            <span class="ml-2 text-sm font-normal text-blue-600 font-mono">{{ week_hours }}h</span>
-            {% endif %}
-        </h2>
-    </div>
-    {% if recent_time_entries %}
-    <div class="bg-white rounded-xl shadow overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-                <tr>
-                    <th class="px-4 py-2 text-left">Date</th>
-                    <th class="px-4 py-2 text-left">Projet</th>
-                    <th class="px-4 py-2 text-left">Ticket</th>
-                    <th class="px-4 py-2 text-left">Activité</th>
-                    <th class="px-4 py-2 text-right">Heures</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                {% for te in recent_time_entries %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-gray-500">{{ te.spent_on|date:"d/m" }}</td>
-                    <td class="px-4 py-2">
-                        <a href="{{ te.project.get_absolute_url }}"
-                           class="text-blue-600 hover:underline">{{ te.project.name }}</a>
-                    </td>
-                    <td class="px-4 py-2 text-gray-500">
-                        {% if te.issue %}
-                        <a href="{{ te.issue.get_absolute_url }}" class="hover:underline">
-                            #{{ te.issue.pk }}
-                        </a>
-                        {% else %}–{% endif %}
-                    </td>
-                    <td class="px-4 py-2 text-gray-500">{{ te.activity }}</td>
-                    <td class="px-4 py-2 text-right font-mono font-medium">{{ te.hours }}h</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p class="text-gray-500 text-sm">Aucune saisie cette semaine.</p>
-    {% endif %}
-</div>
-
 {% endblock %}

@@ -77,16 +77,17 @@ class ProjectPermissionRequiredMixin(LoginRequiredMixin):
         return get_object_or_404(Project, identifier=identifier)
 
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        # super() gère la redirection si non connecté
+        # Utilisateur non connecté → LoginRequiredMixin gère la redirection
         if not request.user.is_authenticated:
-            return response
+            return super().dispatch(request, *args, **kwargs)
 
-        project = self.get_project()
-        self.project = project
+        # self.project doit être défini AVANT super().dispatch() car get_form_kwargs()
+        # y accède dès que la vue est instanciée.
+        self.project = self.get_project()
 
         if self.permission_required:
-            perms = get_user_project_permissions(request.user, project)
+            perms = get_user_project_permissions(request.user, self.project)
             if self.permission_required not in perms:
                 raise PermissionDenied
-        return response
+
+        return super().dispatch(request, *args, **kwargs)

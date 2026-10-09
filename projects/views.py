@@ -49,9 +49,11 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         project = form.save()
         # L'auteur devient automatiquement manager
-        default_role = Role.objects.filter(
-            permissions__contains=["manage_project"]
-        ).first()
+        # JSONField __contains n'est pas supporté par SQLite → filtre Python
+        default_role = next(
+            (r for r in Role.objects.all() if "manage_project" in (r.permissions or [])),
+            None,
+        )
         membership = Membership.objects.create(user=self.request.user, project=project)
         if default_role:
             membership.roles.add(default_role)
