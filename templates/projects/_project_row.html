@@ -1,0 +1,24 @@
+<div class="bg-white rounded-lg shadow px-4 py-3 flex items-center justify-between"
+     style="margin-left: {{ depth|add:0 }}rem">
+    <div>
+        <a href="{{ project.get_absolute_url }}" class="font-medium text-blue-700 hover:underline">
+            {{ project.name }}
+        </a>
+        {% if not project.is_public %}
+        <span class="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">privé</span>
+        {% endif %}
+        {% if project.status == 'archived' %}
+        <span class="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">archivé</span>
+        {% endif %}
+        {% if project.description %}
+        <p class="text-sm text-gray-500 mt-0.5">{{ project.description|truncatechars:120 }}</p>
+        {% endif %}
+    </div>
+    <a href="{% url 'projects:issue_list' project.identifier %}"
+       class="text-xs text-gray-400 hover:text-blue-600 ml-4 shrink-0">
+        Tickets
+    </a>
+</div>
+{% for child in project.children.all %}
+{% include "projects/_project_row.html" with project=child depth=depth|add:1 %}
+{% endfor %}

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Mon tableau de bord{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Tickets assignés -->
+    <div class="lg:col-span-2">
+        <h2 class="text-lg font-semibold mb-3">Tickets qui me sont assignés</h2>
+        {% if assigned_issues %}
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                        <th class="px-4 py-2 text-left">#</th>
+                        <th class="px-4 py-2 text-left">Projet</th>
+                        <th class="px-4 py-2 text-left">Sujet</th>
+                        <th class="px-4 py-2 text-left">Priorité</th>
+                        <th class="px-4 py-2 text-left">Statut</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for issue in assigned_issues %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 text-gray-400">{{ issue.pk }}</td>
+                        <td class="px-4 py-2">
+                            <a href="{{ issue.project.get_absolute_url }}" class="text-blue-600 hover:underline">
+                                {{ issue.project.name }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-2">
+                            <a href="{{ issue.get_absolute_url }}" class="hover:underline font-medium">
+                                {{ issue.subject }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-2">{{ issue.priority }}</td>
+                        <td class="px-4 py-2">{{ issue.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">Aucun ticket ouvert assigné.</p>
+        {% endif %}
+    </div>
+
+    <!-- Mes projets -->
+    <div>
+        <h2 class="text-lg font-semibold mb-3">Mes projets</h2>
+        {% if memberships %}
+        <div class="space-y-2">
+            {% for m in memberships %}
+            <a href="{{ m.project.get_absolute_url }}"
+               class="block bg-white rounded-lg shadow px-4 py-3 hover:bg-gray-50">
+                <div class="font-medium">{{ m.project.name }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">
+                    {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">Vous n'êtes membre d'aucun projet.</p>
+        {% endif %}
+        <div class="mt-4">
+            <a href="{% url 'projects:create' %}"
+               class="block text-center text-sm bg-slate-700 text-white py-2 rounded hover:bg-slate-800">
+                Nouveau projet
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- Temps saisi cette semaine -->
+<div class="mt-6">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold">
+            Temps saisi cette semaine
+            {% if week_hours %}
+            <span class="ml-2 text-sm font-normal text-blue-600 font-mono">{{ week_hours }}h</span>
+            {% endif %}
+        </h2>
+    </div>
+    {% if recent_time_entries %}
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-2 text-left">Date</th>
+                    <th class="px-4 py-2 text-left">Projet</th>
+                    <th class="px-4 py-2 text-left">Ticket</th>
+                    <th class="px-4 py-2 text-left">Activité</th>
+                    <th class="px-4 py-2 text-right">Heures</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for te in recent_time_entries %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2 text-gray-500">{{ te.spent_on|date:"d/m" }}</td>
+                    <td class="px-4 py-2">
+                        <a href="{{ te.project.get_absolute_url }}"
+                           class="text-blue-600 hover:underline">{{ te.project.name }}</a>
+                    </td>
+                    <td class="px-4 py-2 text-gray-500">
+                        {% if te.issue %}
+                        <a href="{{ te.issue.get_absolute_url }}" class="hover:underline">
+                            #{{ te.issue.pk }}
+                        </a>
+                        {% else %}–{% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-gray-500">{{ te.activity }}</td>
+                    <td class="px-4 py-2 text-right font-mono font-medium">{{ te.hours }}h</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500 text-sm">Aucune saisie cette semaine.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

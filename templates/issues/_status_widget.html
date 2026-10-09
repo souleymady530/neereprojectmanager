@@ -1,0 +1,33 @@
+<div id="status-widget" class="space-y-2">
+    <div class="text-xs text-gray-400 uppercase">Statut</div>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+        {% if issue.status.is_closed %}bg-gray-100 text-gray-600
+        {% else %}bg-blue-100 text-blue-700{% endif %}">
+        {{ issue.status }}
+    </span>
+
+    {% if "edit_issues" in user_perms and allowed_statuses %}
+    <form
+        hx-post="{% url 'issues:update_status' issue.pk %}"
+        hx-target="#status-widget"
+        hx-swap="outerHTML"
+        hx-indicator="#status-spinner"
+        class="mt-1"
+    >
+        {% csrf_token %}
+        <div class="flex items-center gap-2">
+            <select
+                name="status_id"
+                class="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1"
+                onchange="this.form.requestSubmit()"
+            >
+                <option value="">Changer vers…</option>
+                {% for s in allowed_statuses %}
+                <option value="{{ s.pk }}">{{ s.name }}</option>
+                {% endfor %}
+            </select>
+            <span id="status-spinner" class="htmx-indicator text-xs text-gray-400">⟳</span>
+        </div>
+    </form>
+    {% endif %}
+</div>

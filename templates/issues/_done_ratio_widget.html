@@ -1,0 +1,31 @@
+<div id="done-ratio-widget" class="space-y-1">
+    <div class="text-xs text-gray-400 uppercase">Avancement</div>
+    <div class="flex items-center gap-2">
+        <div class="flex-1 bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                 style="width: {{ issue.done_ratio }}%"></div>
+        </div>
+        <span class="text-xs font-medium w-8 text-right">{{ issue.done_ratio }}%</span>
+    </div>
+
+    {% if "edit_issues" in user_perms %}
+    <form
+        hx-post="{% url 'issues:update_done_ratio' issue.pk %}"
+        hx-target="#done-ratio-widget"
+        hx-swap="outerHTML"
+        hx-trigger="change"
+        class="mt-1"
+    >
+        {% csrf_token %}
+        <input
+            type="range"
+            name="done_ratio"
+            min="0" max="100" step="10"
+            value="{{ issue.done_ratio }}"
+            class="w-full accent-blue-600 cursor-pointer"
+            oninput="this.nextElementSibling.textContent = this.value + '%'"
+        >
+        <span class="text-xs text-gray-400">{{ issue.done_ratio }}%</span>
+    </form>
+    {% endif %}
+</div>

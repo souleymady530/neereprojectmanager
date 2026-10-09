@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Préférences de notification{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-8 px-4">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Préférences de notification</h1>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 p-4 rounded-md {% if message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-red-50 text-red-800{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="bg-white shadow rounded-lg divide-y divide-gray-200">
+    {% csrf_token %}
+
+    <div class="px-6 py-5">
+      <h2 class="text-base font-semibold text-gray-800 mb-4">Tickets</h2>
+      <div class="space-y-3">
+        {% for field in form %}
+          {% if "wiki" not in field.name %}
+          <label class="flex items-start gap-3 cursor-pointer">
+            <div class="mt-0.5">{{ field }}</div>
+            <div>
+              <span class="text-sm font-medium text-gray-700">{{ field.label }}</span>
+              {% if field.help_text %}
+                <p class="text-xs text-gray-500 mt-0.5">{{ field.help_text }}</p>
+              {% endif %}
+            </div>
+          </label>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="px-6 py-5">
+      <h2 class="text-base font-semibold text-gray-800 mb-4">Wiki</h2>
+      <div class="space-y-3">
+        {% for field in form %}
+          {% if "wiki" in field.name %}
+          <label class="flex items-start gap-3 cursor-pointer">
+            <div class="mt-0.5">{{ field }}</div>
+            <div>
+              <span class="text-sm font-medium text-gray-700">{{ field.label }}</span>
+              {% if field.help_text %}
+                <p class="text-xs text-gray-500 mt-0.5">{{ field.help_text }}</p>
+              {% endif %}
+            </div>
+          </label>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="px-6 py-4 bg-gray-50 flex justify-end rounded-b-lg">
+      <button type="submit"
+              class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
+        Enregistrer
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

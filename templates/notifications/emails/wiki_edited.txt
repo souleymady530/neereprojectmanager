@@ -1,0 +1,11 @@
+Page wiki modifiée : {{ page.title }} — {{ page.project.name }}
+
+{{ actor.get_full_name }} a modifié la page « {{ page.title }} » (v{{ revision.version }}).
+
+{% if revision.comment %}Commentaire : {{ revision.comment }}
+
+{% endif %}Voir la page : {{ site_url }}{{ page.get_absolute_url }}
+Historique  : {{ site_url }}{% url 'projects:wiki_history' page.project.identifier page.slug %}
+
+--
+Gérer mes préférences : {{ site_url }}/my/notifications/

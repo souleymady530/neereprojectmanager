@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Champs personnalisés{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Champs personnalisés</h1>
+    <a href="{% url 'customfields:create' %}"
+       class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
+      + Nouveau champ
+    </a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 p-3 rounded-md {% if message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-red-50 text-red-800{% endif %} text-sm">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if fields %}
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-3 text-left">#</th>
+          <th class="px-4 py-3 text-left">Nom</th>
+          <th class="px-4 py-3 text-left">Type</th>
+          <th class="px-4 py-3 text-left">Trackers</th>
+          <th class="px-4 py-3 text-left">Projets</th>
+          <th class="px-4 py-3 text-left">Obligatoire</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for cf in fields %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-400">{{ cf.position }}</td>
+          <td class="px-4 py-3 font-medium text-gray-900">{{ cf.name }}</td>
+          <td class="px-4 py-3 text-gray-600">{{ cf.get_field_type_display }}</td>
+          <td class="px-4 py-3 text-gray-600">
+            {% if cf.is_for_all_trackers %}
+              <span class="text-gray-400 italic">Tous</span>
+            {% else %}
+              {% for t in cf.trackers.all %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-600">
+            {% if cf.is_for_all_projects %}
+              <span class="text-gray-400 italic">Tous</span>
+            {% else %}
+              {% for p in cf.projects.all %}{{ p.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if cf.is_required %}
+              <span class="inline-block w-2 h-2 rounded-full bg-red-400"></span>
+            {% else %}
+              <span class="inline-block w-2 h-2 rounded-full bg-gray-200"></span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right space-x-3">
+            <a href="{% url 'customfields:edit' cf.pk %}" class="text-blue-600 hover:underline text-xs">Modifier</a>
+            <form method="post" action="{% url 'customfields:delete' cf.pk %}" class="inline"
+                  onsubmit="return confirm('Supprimer « {{ cf.name }} » et toutes ses valeurs ?')">
+              {% csrf_token %}
+              <button type="submit" class="text-red-500 hover:underline text-xs">Supprimer</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 text-gray-400">
+    <p class="text-lg">Aucun champ personnalisé.</p>
+    <a href="{% url 'customfields:create' %}" class="text-blue-600 hover:underline text-sm mt-2 inline-block">Créer le premier</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <span class="text-gray-900">{{ project.name }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-start justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">{{ project.name }}</h1>
+        {% if project.description %}
+        <p class="text-gray-600 mt-1">{{ project.description }}</p>
+        {% endif %}
+    </div>
+    <div class="flex gap-2">
+        {% if "add_issues" in user_perms %}
+        <a href="{% url 'projects:issue_create' project.identifier %}"
+           class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700">
+            + Ticket
+        </a>
+        {% endif %}
+        {% if "manage_project" in user_perms %}
+        <a href="{% url 'projects:settings' project.identifier %}"
+           class="bg-gray-100 text-gray-700 text-sm px-4 py-2 rounded hover:bg-gray-200">
+            Paramètres
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Navigation du projet -->
+<nav class="flex gap-4 border-b mb-6 text-sm">
+    <a href="{{ project.get_absolute_url }}"
+       class="pb-2 border-b-2 border-blue-600 text-blue-600 font-medium">Aperçu</a>
+    <a href="{% url 'projects:issue_list' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Tickets</a>
+    <a href="{% url 'projects:roadmap' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Roadmap</a>
+    {% if "view_issues" in user_perms %}
+    <a href="{% url 'projects:gantt' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Gantt</a>
+    {% endif %}
+    {% if "view_time_entries" in user_perms %}
+    <a href="{% url 'projects:time_entries' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Temps</a>
+    {% endif %}
+    {% if "view_wiki" in user_perms %}
+    <a href="{% url 'projects:wiki_home' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Wiki</a>
+    {% endif %}
+</nav>
+
+<!-- Membres -->
+<div>
+    <h2 class="text-lg font-semibold mb-3">Membres</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {% for m in project.memberships.all %}
+        <div class="bg-white rounded-lg shadow px-3 py-2">
+            <div class="font-medium text-sm">{{ m.user.get_full_name }}</div>
+            <div class="text-xs text-gray-400">
+                {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

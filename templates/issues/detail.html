@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}#{{ issue.pk }} {{ issue.subject }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ issue.project.get_absolute_url }}" class="hover:underline">{{ issue.project.name }}</a>
+    › <a href="{% url 'projects:issue_list' issue.project.identifier %}" class="hover:underline">Tickets</a>
+    › #{{ issue.pk }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+    <!-- Contenu principal -->
+    <div class="lg:col-span-3 space-y-4">
+
+        <!-- En-tête du ticket -->
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <div class="text-xs text-gray-400 mb-1">{{ issue.tracker }} #{{ issue.pk }}</div>
+                    <h1 class="text-xl font-bold leading-snug">{{ issue.subject }}</h1>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ml-4">
+                    {% include "issues/_watch_button.html" %}
+                    {% if "edit_issues" in user_perms %}
+                    <a href="{% url 'issues:edit' issue.pk %}"
+                       class="text-sm text-blue-600 hover:underline">Modifier</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% if issue.description %}
+            <div class="text-sm text-gray-700 mt-3 leading-relaxed">
+                {{ issue.description|linebreaksbr }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Historique et commentaires -->
+        <div id="journal-list" class="space-y-3">
+            {% for journal in issue.journals.all %}
+            {% include "issues/_journal_entry.html" %}
+            {% endfor %}
+        </div>
+
+        <!-- Formulaire de commentaire HTMX -->
+        <div class="bg-white rounded-xl shadow p-5">
+            <h3 class="font-medium mb-3 text-sm text-gray-700">Ajouter un commentaire</h3>
+            <form
+                hx-post="{% url 'issues:add_note' issue.pk %}"
+                hx-target="#journal-list"
+                hx-swap="beforeend"
+                hx-on::after-request="if(event.detail.successful && event.detail.xhr.status !== 204) this.reset()"
+                method="post"
+            >
+                {% csrf_token %}
+                <textarea
+                    name="notes"
+                    rows="4"
+                    placeholder="Ajouter un commentaire…"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                ></textarea>
+                <div class="mt-3 flex items-center gap-3">
+                    <button type="submit"
+                        class="bg-slate-700 text-white text-sm px-5 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                        Envoyer
+                    </button>
+                    <span class="htmx-indicator text-xs text-gray-400">Envoi…</span>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Panneau latéral -->
+    <div class="space-y-4">
+
+        <!-- Widgets statut + priorité + assigné -->
+        <div class="bg-white rounded-xl shadow p-4 text-sm space-y-4">
+
+            <!-- Statut : widget HTMX -->
+            {% include "issues/_status_widget.html" %}
+
+            <!-- Priorité -->
+            <div>
+                <div class="text-xs text-gray-400 uppercase mb-1">Priorité</div>
+                <span class="font-medium">{{ issue.priority }}</span>
+            </div>
+
+            <!-- Assigné à -->
+            <div>
+                <div class="text-xs text-gray-400 uppercase mb-1">Assigné à</div>
+                <span>{{ issue.assigned_to|default:"–" }}</span>
+            </div>
+
+            {% if issue.fixed_version %}
+            <div>
+                <div class="text-xs text-gray-400 uppercase mb-1">Version cible</div>
+                <span>{{ issue.fixed_version }}</span>
+            </div>
+            {% endif %}
+
+            {% if issue.start_date or issue.due_date %}
+            <div>
+                <div class="text-xs text-gray-400 uppercase mb-1">Dates</div>
+                {% if issue.start_date %}
+                <div>Début : {{ issue.start_date|date:"d/m/Y" }}</div>
+                {% endif %}
+                {% if issue.due_date %}
+                <div>Échéance : {{ issue.due_date|date:"d/m/Y" }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if issue.estimated_hours %}
+            <div>
+                <div class="text-xs text-gray-400 uppercase mb-1">Estimé</div>
+                <span>{{ issue.estimated_hours }}h</span>
+            </div>
+            {% endif %}
+
+            <!-- Avancement : widget HTMX -->
+            {% include "issues/_done_ratio_widget.html" %}
+
+            <!-- Temps saisi -->
+            <div class="pt-3 border-t">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="text-xs text-gray-400 uppercase">Temps saisi</div>
+                    {% if "log_time" in user_perms %}
+                    <a href="{% url 'projects:time_entry_create' issue.project.identifier %}?issue={{ issue.pk }}"
+                       class="text-xs text-blue-600 hover:underline">+ Saisir</a>
+                    {% endif %}
+                </div>
+                <div class="font-mono font-semibold text-sm text-gray-800">{{ total_hours }}h</div>
+                {% if time_entries %}
+                <ul class="mt-2 space-y-1">
+                    {% for te in time_entries %}
+                    <li class="text-xs text-gray-500">
+                        {{ te.spent_on|date:"d/m" }} –
+                        <span class="font-medium">{{ te.hours }}h</span>
+                        {{ te.activity }}
+                        <span class="text-gray-400">({{ te.user.get_full_name }})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            {% include "customfields/_values.html" %}
+
+            <div class="pt-3 border-t text-xs text-gray-400 space-y-0.5">
+                <div>Créé le {{ issue.created_at|date:"d/m/Y" }}</div>
+                <div>par {{ issue.author|default:"–" }}</div>
+                <div>Mis à jour {{ issue.updated_at|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+
+        <!-- Sous-tickets -->
+        {% if issue.children.exists %}
+        <div class="bg-white rounded-xl shadow p-4">
+            <h3 class="text-sm font-medium mb-2">Sous-tickets</h3>
+            <ul class="space-y-1 text-sm">
+                {% for child in issue.children.all %}
+                <li>
+                    <a href="{{ child.get_absolute_url }}" class="text-blue-600 hover:underline">
+                        #{{ child.pk }} {{ child.subject }}
+                    </a>
+                    <span class="text-xs text-gray-400 ml-1">{{ child.status }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Ticket parent -->
+        {% if issue.parent %}
+        <div class="bg-white rounded-xl shadow p-4">
+            <h3 class="text-sm font-medium mb-2">Ticket parent</h3>
+            <a href="{{ issue.parent.get_absolute_url }}" class="text-sm text-blue-600 hover:underline">
+                #{{ issue.parent.pk }} {{ issue.parent.subject }}
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+{% endblock %}

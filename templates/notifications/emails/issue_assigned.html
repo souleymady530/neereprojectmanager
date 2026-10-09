@@ -1,0 +1,24 @@
+{% extends "notifications/emails/base.html" %}
+{% block body %}
+<div class="header">
+  <h2>Ticket #{{ issue.pk }} assigné à vous</h2>
+  <div class="project">{{ issue.project.name }} › {{ issue.tracker }}</div>
+</div>
+
+<p style="font-size:14px;color:#374151;">
+  <strong>{{ actor.get_full_name }}</strong> vous a assigné le ticket suivant :
+</p>
+
+<table class="meta-table">
+  <tr><td>Sujet</td><td><strong>{{ issue.subject }}</strong></td></tr>
+  <tr><td>Statut</td><td><span class="badge badge-blue">{{ issue.status }}</span></td></tr>
+  <tr><td>Priorité</td><td>{{ issue.priority }}</td></tr>
+  {% if issue.due_date %}<tr><td>Échéance</td><td>{{ issue.due_date|date:"d/m/Y" }}</td></tr>{% endif %}
+</table>
+
+{% if issue.description %}
+<div class="description">{{ issue.description|truncatechars:400 }}</div>
+{% endif %}
+
+<a href="{{ site_url }}{{ issue.get_absolute_url }}" class="btn">Voir le ticket →</a>
+{% endblock %}

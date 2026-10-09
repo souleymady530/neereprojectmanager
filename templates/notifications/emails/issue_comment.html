@@ -1,0 +1,21 @@
+{% extends "notifications/emails/base.html" %}
+{% block body %}
+<div class="header">
+  <h2>Nouveau commentaire sur #{{ issue.pk }}</h2>
+  <div class="project">{{ issue.project.name }} › {{ issue.tracker }}</div>
+</div>
+
+<p style="font-size:14px;color:#374151;">
+  <strong>{{ actor.get_full_name }}</strong> a commenté
+  <strong>{{ issue.subject }}</strong> :
+</p>
+
+<div class="comment-box">{{ journal.notes }}</div>
+
+<table class="meta-table">
+  <tr><td>Statut</td><td><span class="badge badge-blue">{{ issue.status }}</span></td></tr>
+  <tr><td>Assigné à</td><td>{{ issue.assigned_to|default:"–" }}</td></tr>
+</table>
+
+<a href="{{ site_url }}{{ issue.get_absolute_url }}" class="btn">Voir le ticket →</a>
+{% endblock %}

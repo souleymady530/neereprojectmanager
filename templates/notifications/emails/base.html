@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f4f4f5; margin:0; padding:24px; }
+  .card { background:#fff; border-radius:8px; max-width:600px; margin:0 auto; padding:32px; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  .header { border-bottom:2px solid #3b82f6; padding-bottom:16px; margin-bottom:24px; }
+  .header h2 { margin:0; color:#1e293b; font-size:18px; }
+  .header .project { color:#6b7280; font-size:13px; margin-top:4px; }
+  .meta-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:13px; }
+  .meta-table td { padding:6px 0; vertical-align:top; }
+  .meta-table td:first-child { color:#6b7280; width:130px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; }
+  .badge-blue { background:#dbeafe; color:#1d4ed8; }
+  .badge-gray { background:#f3f4f6; color:#6b7280; }
+  .description { background:#f8fafc; border-left:3px solid #e2e8f0; padding:12px 16px; margin:16px 0; border-radius:0 4px 4px 0; font-size:13px; color:#374151; white-space:pre-wrap; }
+  .changes { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:12px 16px; margin:16px 0; }
+  .changes h4 { margin:0 0 8px; font-size:13px; color:#15803d; }
+  .change-row { font-size:12px; color:#374151; padding:2px 0; }
+  .change-row .field { font-weight:600; }
+  .comment-box { background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:12px 16px; margin:16px 0; font-size:13px; white-space:pre-wrap; }
+  .btn { display:inline-block; background:#3b82f6; color:#fff; text-decoration:none; padding:10px 20px; border-radius:6px; font-size:13px; margin-top:16px; }
+  .footer { text-align:center; margin-top:24px; font-size:11px; color:#9ca3af; }
+  .footer a { color:#6b7280; }
+</style>
+</head>
+<body>
+<div class="card">
+  {% block body %}{% endblock %}
+  <div class="footer">
+    Vous recevez cet email car vous participez au projet <strong>{{ issue.project.name|default:page.project.name|default:"" }}</strong>.<br>
+    <a href="{{ site_url }}/my/notifications/">Gérer mes préférences de notification</a>
+  </div>
+</div>
+</body>
+</html>

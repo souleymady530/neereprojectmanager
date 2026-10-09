@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Diff – {{ wiki_page.title }} – Wiki – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:wiki_home' project.identifier %}" class="hover:underline">Wiki</a>
+    › <a href="{{ wiki_page.get_absolute_url }}" class="hover:underline">{{ wiki_page.title }}</a>
+    › Diff
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <h1 class="text-2xl font-bold mb-4">Diff – {{ wiki_page.title }}</h1>
+
+    <!-- Sélecteur de versions -->
+    <form method="get" class="bg-white rounded-xl shadow p-4 mb-6 flex items-end gap-4 text-sm">
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Version de départ</label>
+            <select name="from"
+                class="border border-gray-300 rounded px-2 py-1.5">
+                {% for rev in all_revisions %}
+                <option value="{{ rev.version }}"
+                    {% if rev.version == rev_from.version %}selected{% endif %}>
+                    v{{ rev.version }} – {{ rev.created_at|date:"d/m/Y" }}
+                    {% if rev.comment %}({{ rev.comment|truncatechars:30 }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Version d'arrivée</label>
+            <select name="to"
+                class="border border-gray-300 rounded px-2 py-1.5">
+                {% for rev in all_revisions %}
+                <option value="{{ rev.version }}"
+                    {% if rev.version == rev_to.version %}selected{% endif %}>
+                    v{{ rev.version }} – {{ rev.created_at|date:"d/m/Y" }}
+                    {% if rev.comment %}({{ rev.comment|truncatechars:30 }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit"
+            class="bg-slate-700 text-white px-4 py-1.5 rounded hover:bg-slate-800">
+            Comparer
+        </button>
+    </form>
+
+    <!-- Entêtes diff -->
+    <div class="flex gap-4 text-sm mb-2">
+        <div class="flex-1 bg-red-50 border border-red-200 rounded px-3 py-1 text-red-700">
+            v{{ rev_from.version }} –
+            {{ rev_from.created_at|date:"d/m/Y H:i" }} –
+            {{ rev_from.author.get_full_name|default:"–" }}
+        </div>
+        <div class="flex-1 bg-green-50 border border-green-200 rounded px-3 py-1 text-green-700">
+            v{{ rev_to.version }} –
+            {{ rev_to.created_at|date:"d/m/Y H:i" }} –
+            {{ rev_to.author.get_full_name|default:"–" }}
+        </div>
+    </div>
+
+    <!-- Diff -->
+    <div class="rounded-xl overflow-hidden shadow">
+        {{ diff_html }}
+    </div>
+</div>
+{% endblock %}

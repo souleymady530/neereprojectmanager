@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Historique – {{ wiki_page.title }} – Wiki – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:wiki_home' project.identifier %}" class="hover:underline">Wiki</a>
+    › <a href="{{ wiki_page.get_absolute_url }}" class="hover:underline">{{ wiki_page.title }}</a>
+    › Historique
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Historique – {{ wiki_page.title }}</h1>
+    <div class="flex gap-2 text-sm">
+        <a href="{{ wiki_page.get_absolute_url }}"
+           class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200">← Page</a>
+        <a href="{% url 'projects:wiki_diff' project.identifier wiki_page.slug %}"
+           class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200">Comparer</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+            <tr>
+                <th class="px-4 py-2 text-left w-16">Version</th>
+                <th class="px-4 py-2 text-left">Date</th>
+                <th class="px-4 py-2 text-left">Auteur</th>
+                <th class="px-4 py-2 text-left">Commentaire</th>
+                <th class="px-4 py-2 text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for rev in revisions %}
+            <tr class="hover:bg-gray-50 {% if forloop.first %}bg-blue-50{% endif %}">
+                <td class="px-4 py-2 font-mono font-medium text-blue-600">
+                    <a href="{{ rev.get_absolute_url }}" class="hover:underline">v{{ rev.version }}</a>
+                    {% if forloop.first %}
+                    <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded ml-1">actuelle</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2 text-gray-500">{{ rev.created_at|date:"d/m/Y H:i" }}</td>
+                <td class="px-4 py-2">{{ rev.author.get_full_name|default:"–" }}</td>
+                <td class="px-4 py-2 text-gray-500 italic">{{ rev.comment|default:"–" }}</td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    <a href="{{ rev.get_absolute_url }}" class="text-xs text-blue-600 hover:underline">Voir</a>
+                    {% if not forloop.first %}
+                    <a href="{% url 'projects:wiki_diff' project.identifier wiki_page.slug %}?from={{ rev.version }}&to={{ revisions.0.version }}"
+                       class="text-xs text-gray-500 hover:underline">Diff</a>
+                    {% if "edit_wiki" in user_perms %}
+                    <form method="post"
+                          action="{% url 'projects:wiki_rollback' project.identifier wiki_page.slug rev.version %}"
+                          class="inline"
+                          onsubmit="return confirm('Revenir à la version {{ rev.version }} ?')">
+                        {% csrf_token %}
+                        <button type="submit" class="text-xs text-amber-600 hover:underline">
+                            Restaurer
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-4 py-6 text-center text-gray-400">Aucune révision.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

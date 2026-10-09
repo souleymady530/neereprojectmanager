@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+<style>
+  /* Personnalisation des couleurs des barres */
+  .bar-done     .bar          { fill: #22c55e !important; }   /* vert */
+  .bar-done     .bar-progress { fill: #16a34a !important; }
+  .bar-overdue  .bar          { fill: #ef4444 !important; }   /* rouge */
+  .bar-overdue  .bar-progress { fill: #b91c1c !important; }
+  .bar-open     .bar          { fill: #3b82f6 !important; }   /* bleu */
+  .bar-open     .bar-progress { fill: #1d4ed8 !important; }
+
+  /* Curseur pointer sur les barres */
+  .bar-wrapper { cursor: pointer; }
+
+  /* Conteneur scrollable */
+  #gantt-wrap { overflow-x: auto; }
+  .gantt-container svg { min-width: 600px; }
+</style>
+{% endblock %}
+
+{% block title %}Gantt — {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+  <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+  › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+  › Gantt
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+  <!-- En-tête + stats -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h1 class="text-2xl font-bold text-gray-900">Diagramme de Gantt</h1>
+    <div class="flex items-center gap-3 text-sm text-gray-500">
+      <span>{{ task_count }} ticket{{ task_count|pluralize }} affiché{{ task_count|pluralize }}</span>
+      {% if without_dates %}
+      <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">
+        {{ without_dates }} ticket{{ without_dates|pluralize }} sans date masqué{{ without_dates|pluralize }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Barre de filtres + modes de vue -->
+  <form method="get" class="bg-white rounded-xl shadow px-4 py-3 flex flex-wrap items-end gap-3">
+
+    <!-- Tracker -->
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-gray-500 font-medium">Tracker</label>
+      <select name="tracker"
+              class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+        <option value="">Tous</option>
+        {% for t in trackers %}
+        <option value="{{ t.pk }}" {% if current_tracker == t.pk|stringformat:"s" %}selected{% endif %}>
+          {{ t.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Version -->
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-gray-500 font-medium">Version</label>
+      <select name="version"
+              class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+        <option value="">Toutes</option>
+        {% for v in versions %}
+        <option value="{{ v.pk }}" {% if current_version == v.pk|stringformat:"s" %}selected{% endif %}>
+          {{ v.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Assigné -->
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-gray-500 font-medium">Assigné à</label>
+      <select name="assigned_to"
+              class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+        <option value="">Tous</option>
+        {% for m in members %}
+        <option value="{{ m.pk }}" {% if current_assigned == m.pk|stringformat:"s" %}selected{% endif %}>
+          {{ m.get_full_name|default:m.username }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Mode d'affichage -->
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-gray-500 font-medium">Échelle</label>
+      <select name="mode"
+              class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+        <option value="Day"   {% if view_mode == "Day"   %}selected{% endif %}>Jour</option>
+        <option value="Week"  {% if view_mode == "Week"  %}selected{% endif %}>Semaine</option>
+        <option value="Month" {% if view_mode == "Month" %}selected{% endif %}>Mois</option>
+      </select>
+    </div>
+
+    <button type="submit"
+            class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors">
+      Filtrer
+    </button>
+
+    {% if current_tracker or current_version or current_assigned %}
+    <a href="{% url 'projects:gantt' project.identifier %}"
+       class="px-4 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm rounded transition-colors">
+      Réinitialiser
+    </a>
+    {% endif %}
+
+    <!-- Légende -->
+    <div class="ml-auto flex items-center gap-3 text-xs text-gray-500">
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-3 h-3 rounded-sm bg-blue-500"></span>En cours
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-3 h-3 rounded-sm bg-green-500"></span>Terminé
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-3 h-3 rounded-sm bg-red-500"></span>En retard
+      </span>
+    </div>
+  </form>
+
+  <!-- Diagramme Gantt -->
+  {% if task_count %}
+  <div class="bg-white rounded-xl shadow p-4">
+    <div id="gantt-wrap">
+      <div id="gantt"></div>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl shadow p-10 text-center text-gray-400">
+    <p class="text-lg">Aucun ticket avec des dates pour ces critères.</p>
+    <p class="text-sm mt-2">
+      Ajoutez des <strong>dates de début et d'échéance</strong> sur vos tickets pour les voir apparaître ici.
+    </p>
+    {% if without_dates %}
+    <p class="text-sm mt-1 text-yellow-600">
+      {{ without_dates }} ticket{{ without_dates|pluralize }} exist{{ without_dates|pluralize:"e,ent" }}
+      mais {{ without_dates|pluralize:"il n'a,ils n'ont" }} pas de date.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if task_count %}
+<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.js"></script>
+<script>
+(function () {
+  const tasks = {{ tasks_json|safe }};
+
+  const gantt = new Gantt("#gantt", tasks, {
+    view_mode: "{{ view_mode }}",
+    date_format: "YYYY-MM-DD",
+    bar_height: 24,
+    padding: 16,
+
+    on_click: function (task) {
+      if (task.url) window.location.href = task.url;
+    },
+
+    // Désactiver le drag & drop (lecture seule)
+    on_date_change: function (task, start, end) {
+      gantt.refresh(tasks);  // annule le changement
+    },
+    on_progress_change: function (task, progress) {
+      gantt.refresh(tasks);  // annule le changement
+    },
+  });
+
+  // Synchroniser le sélecteur d'échelle avec Frappe Gantt
+  document.querySelector("select[name='mode']").addEventListener("change", function () {
+    this.form.submit();
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

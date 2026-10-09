@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Roadmap – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › Roadmap
+</div>
+{% endblock %}
+
+{% block content %}
+{% with today=request.session|default_if_none:"" %}
+{% now "Y-m-d" as today_str %}
+
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Roadmap – {{ project.name }}</h1>
+    {% if "manage_versions" in user_perms %}
+    <a href="{% url 'projects:version_create' project.identifier %}"
+       class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700">
+        + Nouvelle version
+    </a>
+    {% endif %}
+</div>
+
+<!-- Navigation du projet -->
+<nav class="flex gap-4 border-b mb-6 text-sm">
+    <a href="{{ project.get_absolute_url }}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Aperçu</a>
+    <a href="{% url 'projects:issue_list' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Tickets</a>
+    <a href="{% url 'projects:roadmap' project.identifier %}"
+       class="pb-2 border-b-2 border-blue-600 text-blue-600 font-medium">Roadmap</a>
+</nav>
+
+{% if versions %}
+<div class="space-y-6">
+    {% for version in versions %}
+    {% include "versions/_version_card.html" with version=version today=today_str %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow p-8 text-center text-gray-400">
+    <p class="mb-4">Aucune version définie pour ce projet.</p>
+    {% if "manage_versions" in user_perms %}
+    <a href="{% url 'projects:version_create' project.identifier %}"
+       class="text-blue-600 hover:underline text-sm">
+        Créer la première version →
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Backlog : tickets sans version -->
+{% if backlog %}
+<div class="mt-8">
+    <h2 class="text-lg font-semibold mb-3 text-gray-600">
+        Backlog
+        <span class="text-sm font-normal text-gray-400">({{ backlog|length }} ticket{{ backlog|length|pluralize }} sans version)</span>
+    </h2>
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <ul class="divide-y divide-gray-100">
+            {% for issue in backlog %}
+            <li class="px-5 py-2 flex items-center gap-3 hover:bg-gray-50 text-sm">
+                <span class="text-gray-300 text-xs w-8 shrink-0 text-right">#{{ issue.pk }}</span>
+                <span class="text-xs text-gray-400 w-20 shrink-0">{{ issue.tracker }}</span>
+                <a href="{{ issue.get_absolute_url }}" class="flex-1 hover:underline truncate">
+                    {{ issue.subject }}
+                </a>
+                <span class="text-xs shrink-0" style="color: {{ issue.priority.color }}">
+                    {{ issue.priority }}
+                </span>
+                <span class="text-xs text-gray-400 shrink-0">{{ issue.assigned_to|default:"–" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+{% endwith %}
+{% endblock %}

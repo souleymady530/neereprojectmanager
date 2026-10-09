@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Paramètres – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › Paramètres
+</div>
+{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Paramètres – {{ project.name }}</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- Membres -->
+    <div>
+        <h2 class="text-lg font-semibold mb-3">Membres</h2>
+        <div class="bg-white rounded-xl shadow overflow-hidden mb-4">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                        <th class="px-4 py-2 text-left">Utilisateur</th>
+                        <th class="px-4 py-2 text-left">Rôles</th>
+                        <th class="px-4 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for m in memberships %}
+                    <tr>
+                        <td class="px-4 py-2 font-medium">{{ m.user.get_full_name }}</td>
+                        <td class="px-4 py-2 text-gray-500">
+                            {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        </td>
+                        <td class="px-4 py-2 text-right">
+                            <form method="post"
+                                  action="{% url 'projects:member_remove' project.identifier m.pk %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="text-red-500 text-xs hover:underline"
+                                        onclick="return confirm('Retirer ce membre ?')">
+                                    Retirer
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="px-4 py-3 text-gray-400">Aucun membre.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Ajouter un membre -->
+        <h3 class="font-medium mb-2 text-sm">Ajouter un membre</h3>
+        <div class="bg-white rounded-xl shadow p-4">
+            <form method="post" action="{% url 'projects:member_add' project.identifier %}" class="space-y-3">
+                {% csrf_token %}
+                {% for field in membership_form %}
+                <div>
+                    <label class="block text-xs font-medium mb-1">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+                <button type="submit"
+                    class="bg-slate-700 text-white text-sm px-4 py-1.5 rounded hover:bg-slate-800">
+                    Ajouter
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Infos du projet -->
+    <div>
+        <h2 class="text-lg font-semibold mb-3">Informations</h2>
+        <div class="bg-white rounded-xl shadow p-4">
+            <a href="{% url 'projects:edit' project.identifier %}"
+               class="block text-sm text-blue-600 hover:underline">
+                Modifier les informations du projet →
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- Versions -->
+<div class="mt-8">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold">Versions</h2>
+        <a href="{% url 'projects:version_create' project.identifier %}"
+           class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">
+            + Nouvelle version
+        </a>
+    </div>
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-2 text-left">Nom</th>
+                    <th class="px-4 py-2 text-left">Statut</th>
+                    <th class="px-4 py-2 text-left">Date de livraison</th>
+                    <th class="px-4 py-2 text-left">Progression</th>
+                    <th class="px-4 py-2"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for version in versions %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2 font-medium">{{ version.name }}</td>
+                    <td class="px-4 py-2">
+                        {% if version.status == 'open' %}
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Ouverte</span>
+                        {% elif version.status == 'locked' %}
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Verrouillée</span>
+                        {% else %}
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Fermée</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-gray-500">{{ version.effective_date|date:"d/m/Y"|default:"–" }}</td>
+                    <td class="px-4 py-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-24 bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-blue-500 h-1.5 rounded-full"
+                                     style="width: {{ version.progress_pct }}%"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">{{ version.progress_pct }}%</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-2 text-right">
+                        <a href="{% url 'projects:version_edit' project.identifier version.pk %}"
+                           class="text-xs text-blue-600 hover:underline mr-2">Modifier</a>
+                        <a href="{% url 'projects:version_delete' project.identifier version.pk %}"
+                           class="text-xs text-red-500 hover:underline">Supprimer</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-4 py-4 text-center text-gray-400">
+                        Aucune version. <a href="{% url 'projects:version_create' project.identifier %}"
+                        class="text-blue-600 hover:underline">En créer une</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

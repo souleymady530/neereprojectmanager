@@ -1,0 +1,84 @@
+<div class="bg-white rounded-xl shadow overflow-hidden">
+
+    <!-- En-tête de la version -->
+    <div class="px-5 py-4 flex items-start justify-between border-b border-gray-100">
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-semibold text-base">{{ version.name }}</h3>
+
+                <!-- Badge statut -->
+                {% if version.status == 'open' %}
+                <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Ouverte</span>
+                {% elif version.status == 'locked' %}
+                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Verrouillée</span>
+                {% else %}
+                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Fermée</span>
+                {% endif %}
+
+                <!-- Date de livraison -->
+                {% if version.effective_date %}
+                <span class="text-xs text-gray-400">
+                    {% if version.effective_date < today %}
+                    <span class="text-red-500">⚠ {{ version.effective_date|date:"d/m/Y" }}</span>
+                    {% else %}
+                    {{ version.effective_date|date:"d/m/Y" }}
+                    {% endif %}
+                </span>
+                {% endif %}
+            </div>
+            {% if version.description %}
+            <p class="text-sm text-gray-500 mt-1">{{ version.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Actions manager -->
+        {% if "manage_versions" in user_perms %}
+        <div class="flex gap-2 ml-4 shrink-0 text-xs">
+            <a href="{% url 'projects:version_edit' project.identifier version.pk %}"
+               class="text-blue-600 hover:underline">Modifier</a>
+            <a href="{% url 'projects:version_delete' project.identifier version.pk %}"
+               class="text-red-500 hover:underline">Supprimer</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Barre de progression -->
+    <div class="px-5 py-3 bg-gray-50 flex items-center gap-3 text-xs text-gray-500">
+        <div class="flex-1 bg-gray-200 rounded-full h-2.5">
+            <div class="bg-blue-500 h-2.5 rounded-full transition-all"
+                 style="width: {{ version.progress_pct }}%"></div>
+        </div>
+        <span class="w-24 text-right shrink-0">
+            {{ version.closed_issues }}/{{ version.total_issues }} fermé{{ version.closed_issues|pluralize }}
+            ({{ version.progress_pct }}%)
+        </span>
+    </div>
+
+    <!-- Tickets ouverts -->
+    {% if version.open_issues_list %}
+    <ul class="divide-y divide-gray-50">
+        {% for issue in version.open_issues_list %}
+        <li class="px-5 py-2 flex items-center gap-3 hover:bg-gray-50 text-sm">
+            <span class="text-gray-300 text-xs w-8 shrink-0 text-right">#{{ issue.pk }}</span>
+            <span class="text-xs text-gray-400 w-20 shrink-0">{{ issue.tracker }}</span>
+            <a href="{{ issue.get_absolute_url }}" class="flex-1 hover:underline truncate">
+                {{ issue.subject }}
+            </a>
+            <span class="text-xs shrink-0" style="color: {{ issue.priority.color }}">
+                {{ issue.priority }}
+            </span>
+            <span class="text-xs text-gray-400 shrink-0">{{ issue.assigned_to|default:"–" }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="px-5 py-2 border-t border-gray-50">
+        <a href="{% url 'projects:issue_list' project.identifier %}?fixed_version={{ version.pk }}"
+           class="text-xs text-blue-600 hover:underline">
+            Voir tous les tickets de cette version →
+        </a>
+    </div>
+    {% else %}
+    <p class="px-5 py-3 text-sm text-gray-400">Aucun ticket ouvert.</p>
+    {% endif %}
+
+</div>

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Modifier la saisie{% else %}Saisir du temps{% endif %} – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:time_entries' project.identifier %}" class="hover:underline">Temps</a>
+    › {% if object %}Modifier{% else %}Saisir{% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+    <h1 class="text-2xl font-bold mb-6">
+        {% if object %}Modifier la saisie{% else %}Saisir du temps{% endif %}
+    </h1>
+    <div class="bg-white rounded-xl shadow p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium mb-1">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                    class="bg-blue-600 text-white px-5 py-2 rounded text-sm hover:bg-blue-700">
+                    Enregistrer
+                </button>
+                <a href="{% url 'projects:time_entries' project.identifier %}"
+                   class="px-5 py-2 rounded border text-sm hover:bg-gray-50">
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

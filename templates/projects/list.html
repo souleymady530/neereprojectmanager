@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Projets{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Projets</h1>
+    <a href="{% url 'projects:create' %}"
+       class="bg-slate-700 text-white text-sm px-4 py-2 rounded hover:bg-slate-800">
+        + Nouveau projet
+    </a>
+</div>
+
+{% if projects %}
+<div class="space-y-2">
+    {% for project in projects %}
+    {% include "projects/_project_row.html" with project=project depth=0 %}
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500">Aucun projet accessible.</p>
+{% endif %}
+{% endblock %}

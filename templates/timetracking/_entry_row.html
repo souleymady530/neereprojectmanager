@@ -1,0 +1,29 @@
+<tr id="entry-{{ entry.pk }}" class="hover:bg-gray-50">
+    <td class="px-4 py-2 text-gray-500 text-xs">{{ entry.spent_on|date:"d/m/Y" }}</td>
+    <td class="px-4 py-2 font-medium text-sm">{{ entry.user.get_full_name }}</td>
+    <td class="px-4 py-2 text-gray-500 text-xs">{{ entry.activity }}</td>
+    <td class="px-4 py-2 text-sm">
+        {% if entry.issue %}
+        <a href="{{ entry.issue.get_absolute_url }}" class="text-blue-600 hover:underline">
+            #{{ entry.issue.pk }} {{ entry.issue.subject|truncatechars:50 }}
+        </a>
+        {% else %}
+        <span class="text-gray-400">–</span>
+        {% endif %}
+    </td>
+    <td class="px-4 py-2 text-sm">{{ entry.comment|truncatechars:60|default:"–" }}</td>
+    <td class="px-4 py-2 text-right font-mono font-medium">{{ entry.hours }}h</td>
+    <td class="px-4 py-2 text-right">
+        {% if entry.user == request.user or request.user.is_superuser %}
+        <a href="{% url 'timetracking:edit' entry.pk %}"
+           class="text-xs text-blue-600 hover:underline mr-2">Modifier</a>
+        <button
+            hx-post="{% url 'timetracking:delete' entry.pk %}"
+            hx-target="#entry-{{ entry.pk }}"
+            hx-swap="outerHTML swap:300ms"
+            hx-confirm="Supprimer cette saisie ?"
+            class="text-xs text-red-500 hover:underline"
+        >Supprimer</button>
+        {% endif %}
+    </td>
+</tr>

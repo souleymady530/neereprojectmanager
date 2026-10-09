@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}v{{ revision.version }} – {{ wiki_page.title }} – Wiki – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:wiki_home' project.identifier %}" class="hover:underline">Wiki</a>
+    › <a href="{{ wiki_page.get_absolute_url }}" class="hover:underline">{{ wiki_page.title }}</a>
+    › <a href="{% url 'projects:wiki_history' project.identifier wiki_page.slug %}" class="hover:underline">Historique</a>
+    › v{{ revision.version }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+    <div class="lg:col-span-3">
+        <div class="flex items-start justify-between mb-4">
+            <div>
+                <h1 class="text-2xl font-bold">{{ wiki_page.title }}</h1>
+                <div class="text-sm text-gray-400 mt-1">
+                    Version {{ revision.version }} –
+                    {{ revision.created_at|date:"d/m/Y H:i" }} –
+                    {{ revision.author.get_full_name|default:"–" }}
+                    {% if revision.comment %} – <em>« {{ revision.comment }} »</em>{% endif %}
+                </div>
+            </div>
+            <div class="flex gap-2 text-sm">
+                <a href="{{ wiki_page.get_absolute_url }}"
+                   class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded hover:bg-blue-200">
+                    Version actuelle
+                </a>
+                {% if "edit_wiki" in user_perms %}
+                <form method="post"
+                      action="{% url 'projects:wiki_rollback' project.identifier wiki_page.slug revision.version %}"
+                      onsubmit="return confirm('Restaurer cette version ?')">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded hover:bg-amber-200">
+                        Restaurer cette version
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-sm text-amber-700 mb-4">
+            Vous consultez une ancienne version de cette page.
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6 prose prose-sm max-w-none wiki-content">
+            {{ content_html }}
+        </div>
+    </div>
+
+    <div>
+        {% with all_pages=wiki_page.project.wiki_pages.all %}
+        {% include "wiki/_sidebar.html" %}
+        {% endwith %}
+    </div>
+
+</div>
+{% endblock %}

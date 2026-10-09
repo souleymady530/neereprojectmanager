@@ -1,0 +1,36 @@
+{% extends "notifications/emails/base.html" %}
+{% block body %}
+<div class="header">
+  <h2>Ticket #{{ issue.pk }} modifié</h2>
+  <div class="project">{{ issue.project.name }} › {{ issue.tracker }}</div>
+</div>
+
+<p style="font-size:14px;color:#374151;">
+  <strong>{{ actor.get_full_name }}</strong> a modifié le ticket
+  <strong>{{ issue.subject }}</strong>.
+</p>
+
+{% if journal.details.all %}
+<div class="changes">
+  <h4>Modifications</h4>
+  {% for d in journal.details.all %}
+  <div class="change-row">
+    <span class="field">{{ d.field }}</span> :
+    {{ d.old_value|default:"–" }} → {{ d.new_value|default:"–" }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if journal.notes %}
+<div class="comment-box">{{ journal.notes }}</div>
+{% endif %}
+
+<table class="meta-table">
+  <tr><td>Statut actuel</td><td><span class="badge badge-blue">{{ issue.status }}</span></td></tr>
+  <tr><td>Assigné à</td><td>{{ issue.assigned_to|default:"–" }}</td></tr>
+  <tr><td>Avancement</td><td>{{ issue.done_ratio }}%</td></tr>
+</table>
+
+<a href="{{ site_url }}{{ issue.get_absolute_url }}" class="btn">Voir le ticket →</a>
+{% endblock %}

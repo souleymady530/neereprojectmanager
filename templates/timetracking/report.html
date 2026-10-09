@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Rapport de temps – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:time_entries' project.identifier %}" class="hover:underline">Temps</a>
+    › Rapport
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Rapport de temps – {{ project.name }}</h1>
+    {% if "log_time" in user_perms %}
+    <a href="{% url 'projects:time_entry_create' project.identifier %}"
+       class="text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        + Saisir du temps
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtre date -->
+<form method="get" class="bg-white rounded-xl shadow p-4 mb-6 flex gap-4 items-end text-sm">
+    <div>
+        <label class="block text-xs text-gray-500 mb-1">Du</label>
+        <input type="date" name="from" value="{{ date_from }}"
+               class="border border-gray-300 rounded px-2 py-1">
+    </div>
+    <div>
+        <label class="block text-xs text-gray-500 mb-1">Au</label>
+        <input type="date" name="to" value="{{ date_to }}"
+               class="border border-gray-300 rounded px-2 py-1">
+    </div>
+    <button type="submit"
+        class="bg-slate-700 text-white px-4 py-1.5 rounded hover:bg-slate-800">
+        Appliquer
+    </button>
+    {% if date_from or date_to %}
+    <a href="?" class="text-gray-400 hover:text-gray-600 text-xs">Réinitialiser</a>
+    {% endif %}
+    <div class="ml-auto text-lg font-bold text-blue-700">
+        Total : {{ total }}h
+    </div>
+</form>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Par utilisateur -->
+    <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-semibold mb-4 text-gray-700">Par utilisateur</h2>
+        {% if by_user %}
+        <div class="space-y-3">
+            {% for row in by_user %}
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span>{{ row.display_name }}</span>
+                    <span class="font-medium font-mono">{{ row.total }}h</span>
+                </div>
+                <div class="bg-gray-200 rounded-full h-2">
+                    {% with pct=row.total|floatformat:0 %}
+                    <div class="bg-blue-500 h-2 rounded-full"
+                         style="width: {% widthratio row.total total 100 %}%"></div>
+                    {% endwith %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400">Aucune donnée.</p>
+        {% endif %}
+    </div>
+
+    <!-- Par activité -->
+    <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-semibold mb-4 text-gray-700">Par activité</h2>
+        {% if by_activity %}
+        <div class="space-y-3">
+            {% for row in by_activity %}
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span>{{ row.activity__name }}</span>
+                    <span class="font-medium font-mono">{{ row.total }}h</span>
+                </div>
+                <div class="bg-gray-200 rounded-full h-2">
+                    <div class="bg-emerald-500 h-2 rounded-full"
+                         style="width: {% widthratio row.total total 100 %}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400">Aucune donnée.</p>
+        {% endif %}
+    </div>
+
+    <!-- Par version -->
+    <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-semibold mb-4 text-gray-700">Par version</h2>
+        {% if by_version %}
+        <div class="space-y-3">
+            {% for row in by_version %}
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span>{{ row.issue__fixed_version__name }}</span>
+                    <span class="font-medium font-mono">{{ row.total }}h</span>
+                </div>
+                <div class="bg-gray-200 rounded-full h-2">
+                    <div class="bg-violet-500 h-2 rounded-full"
+                         style="width: {% widthratio row.total total 100 %}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400">Aucun ticket avec version.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Évolution mensuelle -->
+{% if by_month %}
+<div class="mt-6 bg-white rounded-xl shadow p-5">
+    <h2 class="font-semibold mb-4 text-gray-700">Évolution mensuelle</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="text-xs text-gray-500 uppercase border-b">
+                <tr>
+                    <th class="pb-2 text-left">Mois</th>
+                    <th class="pb-2 text-right">Heures</th>
+                    <th class="pb-2 pl-4 w-64">Répartition</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% with max_month=by_month|last %}
+                {% for row in by_month %}
+                <tr class="hover:bg-gray-50">
+                    <td class="py-2">{{ row.month|date:"F Y"|capfirst }}</td>
+                    <td class="py-2 text-right font-mono font-medium">{{ row.total }}h</td>
+                    <td class="py-2 pl-4">
+                        <div class="bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-400 h-2 rounded-full"
+                                 style="width: {% widthratio row.total max_month.total 100 %}%"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endwith %}
+            </tbody>
+            <tfoot class="border-t font-semibold">
+                <tr>
+                    <td class="pt-2">Total</td>
+                    <td class="pt-2 text-right font-mono">{{ total }}h</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

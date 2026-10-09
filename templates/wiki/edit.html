@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{% if wiki_page %}Éditer {{ wiki_page.title }}{% else %}Nouvelle page{% endif %} – Wiki – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:wiki_home' project.identifier %}" class="hover:underline">Wiki</a>
+    › {% if wiki_page %}<a href="{{ wiki_page.get_absolute_url }}" class="hover:underline">{{ wiki_page.title }}</a> › Éditer
+    {% else %}Nouvelle page{% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex gap-6">
+
+    <!-- Formulaire d'édition -->
+    <div class="flex-1 min-w-0">
+        <h1 class="text-2xl font-bold mb-4">
+            {% if wiki_page %}Éditer « {{ wiki_page.title }} »{% else %}Nouvelle page{% endif %}
+        </h1>
+
+        <form method="post" class="space-y-3">
+            {% csrf_token %}
+
+            <!-- Titre -->
+            <div>
+                <label class="block text-sm font-medium mb-1">
+                    Titre <span class="text-red-500">*</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Toolbar Markdown -->
+            <div class="flex gap-1 bg-gray-100 rounded-t px-2 py-1 border border-b-0 border-gray-300"
+                 x-data>
+                {% for btn in toolbar %}{% endfor %}
+                <button type="button" onclick="insertMd('**', '**', 'texte gras')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200 font-bold" title="Gras">B</button>
+                <button type="button" onclick="insertMd('*', '*', 'texte italique')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200 italic" title="Italique">I</button>
+                <button type="button" onclick="insertMd('`', '`', 'code')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200 font-mono" title="Code inline">` `</button>
+                <button type="button" onclick="insertMd('\n```\n', '\n```', 'code')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200 font-mono" title="Bloc de code">```</button>
+                <span class="w-px bg-gray-300 mx-1"></span>
+                <button type="button" onclick="insertMd('# ', '', 'Titre')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200" title="Titre H1">H1</button>
+                <button type="button" onclick="insertMd('## ', '', 'Titre')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200" title="Titre H2">H2</button>
+                <button type="button" onclick="insertMd('### ', '', 'Titre')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200" title="Titre H3">H3</button>
+                <span class="w-px bg-gray-300 mx-1"></span>
+                <button type="button" onclick="insertMd('- ', '', 'élément')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200" title="Liste">• Liste</button>
+                <button type="button" onclick="insertMd('[', '](url)', 'lien')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200" title="Lien">🔗</button>
+                <button type="button" onclick="insertMd('[[', ']]', 'Titre de la page')"
+                    class="px-2 py-1 text-xs rounded hover:bg-gray-200 text-blue-600" title="Lien wiki">[[…]]</button>
+            </div>
+
+            <!-- Zone de texte -->
+            <div>
+                {{ form.content }}
+                {% if form.content.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.content.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Commentaire d'édition -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Commentaire d'édition</label>
+                {{ form.comment }}
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                    class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 text-sm">
+                    Enregistrer
+                </button>
+                {% if wiki_page %}
+                <a href="{{ wiki_page.get_absolute_url }}"
+                   class="px-6 py-2 rounded border text-sm hover:bg-gray-50">Annuler</a>
+                {% else %}
+                <a href="{% url 'projects:wiki_home' project.identifier %}"
+                   class="px-6 py-2 rounded border text-sm hover:bg-gray-50">Annuler</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Aide Markdown -->
+    <div class="w-64 shrink-0 hidden xl:block">
+        <div class="bg-white rounded-xl shadow p-4 text-xs text-gray-500 space-y-2 sticky top-4">
+            <h3 class="font-semibold text-gray-700 text-sm mb-3">Aide Markdown</h3>
+            <div class="font-mono space-y-1 leading-relaxed">
+                <p><span class="text-gray-400"># </span>Titre 1</p>
+                <p><span class="text-gray-400">## </span>Titre 2</p>
+                <p><span class="text-gray-400">**</span>gras<span class="text-gray-400">**</span></p>
+                <p><span class="text-gray-400">*</span>italique<span class="text-gray-400">*</span></p>
+                <p><span class="text-gray-400">- </span>liste</p>
+                <p><span class="text-gray-400">`</span>code<span class="text-gray-400">`</span></p>
+                <p><span class="text-gray-400">```</span>bloc<span class="text-gray-400">```</span></p>
+                <p><span class="text-gray-400">[</span>lien<span class="text-gray-400">](url)</span></p>
+                <p class="text-blue-600">[[Autre page]]</p>
+                <p class="text-blue-600">[[Page|Texte affiché]]</p>
+                <p><span class="text-gray-400">> </span>citation</p>
+                <p><span class="text-gray-400">---</span> (ligne)</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function insertMd(before, after, placeholder) {
+    const ta = document.getElementById('wiki-content');
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end) || placeholder;
+    const newText = before + selected + after;
+    ta.value = ta.value.substring(0, start) + newText + ta.value.substring(end);
+    ta.focus();
+    ta.selectionStart = start + before.length;
+    ta.selectionEnd = start + before.length + selected.length;
+}
+</script>
+{% endblock %}

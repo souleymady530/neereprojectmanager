@@ -1,0 +1,19 @@
+Ticket #{{ issue.pk }} modifié — {{ issue.project.name }}
+
+{{ actor.get_full_name }} a modifié : {{ issue.subject }}
+
+{% if journal.details.all %}Modifications :
+{% for d in journal.details.all %}  {{ d.field }} : {{ d.old_value|default:"–" }} → {{ d.new_value|default:"–" }}
+{% endfor %}{% endif %}
+{% if journal.notes %}Commentaire :
+{{ journal.notes }}
+
+{% endif %}État actuel :
+  Statut   : {{ issue.status }}
+  Assigné  : {{ issue.assigned_to|default:"–" }}
+  Avancement : {{ issue.done_ratio }}%
+
+Voir le ticket : {{ site_url }}{{ issue.get_absolute_url }}
+
+--
+Gérer mes préférences : {{ site_url }}/my/notifications/

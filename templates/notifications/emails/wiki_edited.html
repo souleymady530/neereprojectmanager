@@ -1,0 +1,30 @@
+{% extends "notifications/emails/base.html" %}
+{% block body %}
+<div class="header">
+  <h2>Page wiki modifiée : {{ page.title }}</h2>
+  <div class="project">{{ page.project.name }} › Wiki</div>
+</div>
+
+<p style="font-size:14px;color:#374151;">
+  <strong>{{ actor.get_full_name }}</strong> a modifié la page wiki
+  <strong>{{ page.title }}</strong>
+  (version {{ revision.version }}).
+</p>
+
+{% if revision.comment %}
+<div class="comment-box">{{ revision.comment }}</div>
+{% endif %}
+
+<table class="meta-table">
+  <tr><td>Page</td><td>{{ page.title }}</td></tr>
+  <tr><td>Version</td><td>{{ revision.version }}</td></tr>
+  <tr><td>Date</td><td>{{ revision.created_at|date:"d/m/Y H:i" }}</td></tr>
+</table>
+
+<a href="{{ site_url }}{{ page.get_absolute_url }}" class="btn">Voir la page →</a>
+&nbsp;
+<a href="{{ site_url }}{% url 'projects:wiki_history' page.project.identifier page.slug %}"
+   style="display:inline-block;color:#6b7280;font-size:13px;padding:10px 16px;border:1px solid #e5e7eb;border-radius:6px;text-decoration:none;margin-top:16px;">
+  Historique
+</a>
+{% endblock %}

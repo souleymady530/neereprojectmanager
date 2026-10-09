@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Redmine{% endblock %} – PM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Indicateur HTMX : caché par défaut, visible pendant les requêtes */
+        .htmx-indicator { opacity: 0; transition: opacity 200ms; }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator { opacity: 1; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body
+    class="bg-gray-50 text-gray-900 min-h-screen flex flex-col"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+>
+
+<!-- Barre de navigation -->
+<nav class="bg-slate-800 text-white px-4 py-2 flex items-center gap-6">
+    <a href="/" class="font-bold text-lg tracking-tight">PM</a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'projects:list' %}" class="hover:text-slate-300 text-sm">Projets</a>
+    <a href="{% url 'issues:list' %}" class="hover:text-slate-300 text-sm">Tickets</a>
+    <div class="ml-auto flex items-center gap-4 text-sm">
+        <a href="{% url 'my:page' %}" class="hover:text-slate-300">{{ user.get_full_name }}</a>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="hover:text-slate-300">Déconnexion</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="ml-auto">
+        <a href="{% url 'login' %}" class="text-sm hover:text-slate-300">Connexion</a>
+    </div>
+    {% endif %}
+</nav>
+
+<!-- Messages Django -->
+{% if messages %}
+<div class="px-6 pt-4 space-y-2">
+    {% for msg in messages %}
+    <div class="px-4 py-2 rounded text-sm
+        {% if msg.tags == 'success' %}bg-green-100 text-green-800
+        {% elif msg.tags == 'error' %}bg-red-100 text-red-800
+        {% else %}bg-blue-100 text-blue-800{% endif %}">
+        {{ msg }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Fil d'Ariane -->
+{% block breadcrumb %}{% endblock %}
+
+<!-- Contenu principal -->
+<main class="flex-1 px-6 py-6 max-w-7xl mx-auto w-full">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="text-center text-xs text-gray-400 py-4">
+    Django Redmine
+</footer>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

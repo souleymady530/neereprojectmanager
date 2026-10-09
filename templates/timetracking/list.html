@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Temps saisi – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › Temps saisi
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Temps saisi – {{ project.name }}</h1>
+    <div class="flex gap-2">
+        <a href="{% url 'projects:time_report' project.identifier %}"
+           class="text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200">
+            Rapport
+        </a>
+        {% if "log_time" in user_perms %}
+        <a href="{% url 'projects:time_entry_create' project.identifier %}"
+           class="text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            + Saisir du temps
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Navigation du projet -->
+<nav class="flex gap-4 border-b mb-6 text-sm">
+    <a href="{{ project.get_absolute_url }}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Aperçu</a>
+    <a href="{% url 'projects:issue_list' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Tickets</a>
+    <a href="{% url 'projects:roadmap' project.identifier %}"
+       class="pb-2 border-b-2 border-transparent hover:border-gray-300">Roadmap</a>
+    <a href="{% url 'projects:time_entries' project.identifier %}"
+       class="pb-2 border-b-2 border-blue-600 text-blue-600 font-medium">Temps</a>
+</nav>
+
+<!-- Filtres -->
+<details class="bg-white rounded-xl shadow p-4 mb-4">
+    <summary class="cursor-pointer text-sm font-medium text-gray-600">Filtres</summary>
+    <form method="get" class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Utilisateur</label>
+            {{ filter.form.user }}
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Activité</label>
+            {{ filter.form.activity }}
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Du</label>
+            <input type="date" name="spent_on__gte" value="{{ request.GET.spent_on__gte }}"
+                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Au</label>
+            <input type="date" name="spent_on__lte" value="{{ request.GET.spent_on__lte }}"
+                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+        </div>
+        <div class="col-span-2 sm:col-span-4 flex gap-2 items-center">
+            <button type="submit"
+                class="bg-slate-700 text-white px-4 py-1.5 rounded text-sm hover:bg-slate-800">
+                Filtrer
+            </button>
+            <a href="?" class="text-sm text-gray-500 hover:underline">Réinitialiser</a>
+            <span class="ml-auto text-sm font-semibold">
+                Total : <span class="text-blue-700">{{ total_hours }}h</span>
+            </span>
+        </div>
+    </form>
+</details>
+
+<!-- Tableau -->
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+            <tr>
+                <th class="px-4 py-2 text-left">Date</th>
+                <th class="px-4 py-2 text-left">Utilisateur</th>
+                <th class="px-4 py-2 text-left">Activité</th>
+                <th class="px-4 py-2 text-left">Ticket</th>
+                <th class="px-4 py-2 text-left">Commentaire</th>
+                <th class="px-4 py-2 text-right">Heures</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody id="time-entries-table" class="divide-y divide-gray-100">
+            {% for entry in entries %}
+            {% include "timetracking/_entry_row.html" %}
+            {% empty %}
+            <tr>
+                <td colspan="7" class="px-4 py-6 text-center text-gray-400">
+                    Aucune saisie de temps.
+                    {% if "log_time" in user_perms %}
+                    <a href="{% url 'projects:time_entry_create' project.identifier %}"
+                       class="text-blue-600 hover:underline ml-1">En saisir une</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="flex justify-center gap-2 mt-4 text-sm">
+    {% if page_obj.has_previous %}
+    <a href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number }}"
+       class="px-3 py-1 rounded border hover:bg-gray-50">‹ Préc.</a>
+    {% endif %}
+    <span class="px-3 py-1">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number }}"
+       class="px-3 py-1 rounded border hover:bg-gray-50">Suiv. ›</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Index du wiki – {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <a href="{% url 'projects:wiki_home' project.identifier %}" class="hover:underline">Wiki</a>
+    › Index
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Index du wiki – {{ project.name }}</h1>
+    {% if "edit_wiki" in user_perms %}
+    <a href="{% url 'projects:wiki_edit' project.identifier 'nouvelle-page' %}"
+       class="bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700">
+        + Nouvelle page
+    </a>
+    {% endif %}
+</div>
+
+{% if pages %}
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+            <tr>
+                <th class="px-4 py-2 text-left">Titre</th>
+                <th class="px-4 py-2 text-left">Version</th>
+                <th class="px-4 py-2 text-left">Dernière modification</th>
+                <th class="px-4 py-2 text-left">Auteur</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for page in pages %}
+            {% with rev=page.current_revision %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2">
+                    <a href="{{ page.get_absolute_url }}"
+                       class="font-medium text-blue-700 hover:underline">{{ page.title }}</a>
+                </td>
+                <td class="px-4 py-2 font-mono text-gray-400 text-xs">
+                    {% if rev %}v{{ rev.version }}{% else %}–{% endif %}
+                </td>
+                <td class="px-4 py-2 text-gray-500">
+                    {% if rev %}{{ rev.created_at|date:"d/m/Y H:i" }}{% else %}–{% endif %}
+                </td>
+                <td class="px-4 py-2 text-gray-500">
+                    {% if rev %}{{ rev.author.get_full_name|default:"–" }}{% else %}–{% endif %}
+                </td>
+                <td class="px-4 py-2 text-right space-x-2">
+                    {% if "edit_wiki" in user_perms %}
+                    <a href="{% url 'projects:wiki_edit' project.identifier page.slug %}"
+                       class="text-xs text-blue-600 hover:underline">Éditer</a>
+                    {% endif %}
+                    <a href="{% url 'projects:wiki_history' project.identifier page.slug %}"
+                       class="text-xs text-gray-400 hover:underline">Historique</a>
+                </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow p-8 text-center text-gray-400">
+    <p class="mb-4">Aucune page wiki.</p>
+    {% if "edit_wiki" in user_perms %}
+    <a href="{% url 'projects:wiki_edit' project.identifier 'accueil' %}"
+       class="text-blue-600 hover:underline text-sm">Créer la page d'accueil →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

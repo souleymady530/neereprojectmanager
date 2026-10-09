@@ -1,0 +1,16 @@
+Ticket #{{ issue.pk }} assigné à vous — {{ issue.project.name }}
+
+{{ actor.get_full_name }} vous a assigné le ticket suivant :
+
+  Sujet    : {{ issue.subject }}
+  Statut   : {{ issue.status }}
+  Priorité : {{ issue.priority }}
+  {% if issue.due_date %}Échéance : {{ issue.due_date|date:"d/m/Y" }}{% endif %}
+
+{% if issue.description %}Description :
+{{ issue.description|truncatechars:300 }}
+{% endif %}
+Voir le ticket : {{ site_url }}{{ issue.get_absolute_url }}
+
+--
+Gérer mes préférences : {{ site_url }}/my/notifications/

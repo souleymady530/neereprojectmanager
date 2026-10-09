@@ -1,0 +1,13 @@
+Nouveau commentaire sur #{{ issue.pk }} — {{ issue.project.name }}
+
+{{ actor.get_full_name }} a commenté : {{ issue.subject }}
+
+{{ journal.notes }}
+
+Statut  : {{ issue.status }}
+Assigné : {{ issue.assigned_to|default:"–" }}
+
+Voir le ticket : {{ site_url }}{{ issue.get_absolute_url }}
+
+--
+Gérer mes préférences : {{ site_url }}/my/notifications/
