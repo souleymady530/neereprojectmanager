@@ -110,8 +110,8 @@ Variables attendues : journal
 
         <!-- Note / commentaire -->
         {% if has_note %}
-        <div class="bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700 leading-relaxed shadow-sm">
-            {{ journal.notes|linebreaksbr }}
+        <div class="bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700 leading-relaxed shadow-sm prose prose-sm max-w-none">
+            {{ journal.notes|render_md }}
         </div>
         {% endif %}
 

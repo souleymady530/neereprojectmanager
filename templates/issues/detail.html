@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load issue_extras %}
 {% block title %}#{{ issue.pk }} {{ issue.subject }}{% endblock %}
 
 {% block breadcrumb %}
@@ -47,8 +48,8 @@
                 </div>
             </div>
             {% if issue.description %}
-            <div class="text-sm text-gray-700 mt-3 leading-relaxed">
-                {{ issue.description|linebreaksbr }}
+            <div class="prose prose-sm max-w-none text-gray-700 mt-3 leading-relaxed">
+                {{ issue.description|render_md }}
             </div>
             {% endif %}
         </div>
@@ -93,7 +94,7 @@
                 method="post"
             >
                 {% csrf_token %}
-                <textarea name="notes" rows="3" placeholder="Votre commentaire…"></textarea>
+                <textarea id="id_notes" name="notes" rows="4" placeholder="Votre commentaire…"></textarea>
                 <div class="mt-3 flex items-center gap-3">
                     <button type="submit" class="btn-primary">Envoyer</button>
                     <span class="htmx-indicator text-xs text-gray-400">Envoi…</span>
@@ -231,4 +232,65 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<style>
+    .EasyMDEContainer .CodeMirror {
+        border: 1px solid #d1d5db;
+        border-radius: 0 0 0.5rem 0.5rem;
+        font-size: 0.875rem;
+        min-height: 100px;
+        background: var(--bg-input, #fff);
+        color: var(--text-primary, #111827);
+    }
+    .EasyMDEContainer .editor-toolbar {
+        border: 1px solid #d1d5db;
+        border-bottom: none;
+        border-radius: 0.5rem 0.5rem 0 0;
+        background: #f9fafb;
+    }
+    .EasyMDEContainer .editor-toolbar button:hover,
+    .EasyMDEContainer .editor-toolbar button.active {
+        background: #e5e7eb;
+        border-color: transparent;
+    }
+    .prose h1, .prose h2, .prose h3 { font-weight: 600; margin-top: 0.75em; margin-bottom: 0.25em; }
+    .prose h1 { font-size: 1.1em; } .prose h2 { font-size: 1em; }
+    .prose ul, .prose ol { padding-left: 1.25em; margin: 0.25em 0; }
+    .prose li { margin: 0.1em 0; }
+    .prose code { background: #f3f4f6; padding: 0.1em 0.3em; border-radius: 0.25em; font-size: 0.85em; }
+    .prose pre { background: #f3f4f6; padding: 0.75em; border-radius: 0.5em; overflow-x: auto; }
+    .prose blockquote { border-left: 3px solid #d1d5db; padding-left: 0.75em; color: #6b7280; }
+    .prose a { color: var(--rm-blue); text-decoration: underline; }
+    .prose strong { font-weight: 600; }
+    .prose p { margin: 0.25em 0; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    const notesArea = document.getElementById("id_notes");
+    if (notesArea) {
+        const easyMDE = new EasyMDE({
+            element: notesArea,
+            spellChecker: false,
+            placeholder: "Votre commentaire… (Markdown supporté)",
+            toolbar: [
+                "bold", "italic", "strikethrough", "|",
+                "unordered-list", "ordered-list", "|",
+                "quote", "code", "|",
+                "link", "|",
+                "preview",
+            ],
+            status: false,
+            minHeight: "100px",
+        });
+        document.querySelector("form[hx-post]").addEventListener("htmx:afterRequest", function(e) {
+            if (e.detail.successful) easyMDE.value("");
+        });
+    }
+</script>
 {% endblock %}

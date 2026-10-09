@@ -13,6 +13,7 @@ urlpatterns = [
     path("time_entries/", include("timetracking.urls")),
     path("api/v1/", include("api.urls")),
     path("custom-fields/", include("customfields.urls")),
+    path("reports/", include("reports.urls")),
     path("", include("core.urls")),
 ]
 

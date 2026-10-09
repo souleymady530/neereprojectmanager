@@ -183,3 +183,58 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<style>
+    .EasyMDEContainer .CodeMirror {
+        border: 1px solid #d1d5db;
+        border-radius: 0 0 0.5rem 0.5rem;
+        font-size: 0.875rem;
+        min-height: 160px;
+        background: var(--bg-input, #fff);
+        color: var(--text-primary, #111827);
+    }
+    .EasyMDEContainer .editor-toolbar {
+        border: 1px solid #d1d5db;
+        border-bottom: none;
+        border-radius: 0.5rem 0.5rem 0 0;
+        background: #f9fafb;
+    }
+    .EasyMDEContainer .editor-toolbar button:hover,
+    .EasyMDEContainer .editor-toolbar button.active {
+        background: #e5e7eb;
+        border-color: transparent;
+    }
+    .EasyMDEContainer .editor-preview {
+        background: #fff;
+        padding: 1rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    const descArea = document.getElementById("id_description");
+    if (descArea) {
+        new EasyMDE({
+            element: descArea,
+            spellChecker: false,
+            autofocus: false,
+            placeholder: "Décrivez le ticket… (Markdown supporté)",
+            toolbar: [
+                "bold", "italic", "strikethrough", "|",
+                "heading-1", "heading-2", "|",
+                "unordered-list", "ordered-list", "|",
+                "quote", "code", "horizontal-rule", "|",
+                "link", "|",
+                "preview", "side-by-side", "fullscreen",
+            ],
+            status: false,
+            minHeight: "160px",
+        });
+    }
+</script>
+{% endblock %}

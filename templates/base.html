@@ -264,6 +264,12 @@
        style="{% if '/issues/' in request.path and '/projects/' not in request.path %}border-color: var(--rm-active);{% else %}border-color: transparent;{% endif %}">
         Tickets
     </a>
+    <a href="{% url 'reports:list' %}"
+       class="px-3 h-12 flex items-center text-sm border-b-2 transition-colors
+              {% if '/reports/' in request.path %}text-white font-medium{% else %}text-gray-300 hover:text-white{% endif %}"
+       style="{% if '/reports/' in request.path %}border-color: var(--rm-active);{% else %}border-color: transparent;{% endif %}">
+        Rapports
+    </a>
 
     <!-- Right side -->
     <div class="ml-auto flex items-center gap-1" x-data="{ open: false }">

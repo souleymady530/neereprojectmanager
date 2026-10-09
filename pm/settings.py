@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "wiki",
     "notifications",
     "customfields",
+    "reports",
 ]
 
 MIDDLEWARE = [

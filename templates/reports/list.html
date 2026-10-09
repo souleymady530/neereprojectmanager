@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Mes rapports{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'my:page' %}" class="hover:underline">Tableau de bord</a>
+    › Rapports
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Mes rapports</h1>
+    <a href="{% url 'reports:create' %}" class="btn-primary">+ Nouveau rapport</a>
+</div>
+
+{% if reports %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nom</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Périmètre</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Colonnes</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Mis à jour</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for report in reports %}
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3">
+                    <a href="{{ report.get_absolute_url }}" class="font-semibold hover:underline"
+                       style="color: var(--rm-blue);">{{ report.name }}</a>
+                </td>
+                <td class="px-4 py-3 text-gray-500">
+                    {{ report.project.name|default:"Tous projets" }}
+                </td>
+                <td class="px-4 py-3 text-gray-400 text-xs">
+                    {{ report.columns|length }} colonne{{ report.columns|length|pluralize }}
+                </td>
+                <td class="px-4 py-3 text-gray-400 text-xs">{{ report.updated_at|date:"d/m/Y" }}</td>
+                <td class="px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-3">
+                        <a href="{% url 'reports:export_csv' report.pk %}"
+                           class="text-xs text-gray-400 hover:text-gray-700" title="Exporter CSV">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none"
+                                 viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                        </a>
+                        <a href="{% url 'reports:edit' report.pk %}"
+                           class="text-xs hover:underline" style="color: var(--rm-blue);">Modifier</a>
+                        <a href="{% url 'reports:delete' report.pk %}"
+                           class="text-xs hover:underline" style="color: var(--rm-red);">Supprimer</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mx-auto mb-3" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-gray-400 text-sm mb-4">Aucun rapport personnalisé pour l'instant.</p>
+    <a href="{% url 'reports:create' %}" class="btn-primary">Créer mon premier rapport</a>
+</div>
+{% endif %}
+{% endblock %}

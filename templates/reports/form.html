@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'reports:list' %}" class="hover:underline">Rapports</a>
+    › {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ title }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Section 1 : Informations générales -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Informations</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        {{ form.name.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-sm mt-1" style="color:var(--rm-red);">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.project.label }}</label>
+                    {{ form.project }}
+                    <p class="text-xs text-gray-400 mt-1">Si vide, le rapport porte sur tous vos projets visibles.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2 : Colonnes -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Colonnes à afficher</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {% for value, label in form.fields.columns.choices %}
+                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                    <input type="checkbox" name="columns" value="{{ value }}"
+                           class="rounded border-gray-300"
+                           {% if value in form.columns.value %}checked{% endif %}>
+                    {{ label }}
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.columns.errors %}
+            <p class="text-sm mt-2" style="color:var(--rm-red);">{{ form.columns.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Section 3 : Filtres -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Filtres</h2>
+
+            <!-- Sujet -->
+            <div class="mb-5">
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_subject.label }}</label>
+                {{ form.f_subject }}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-5">
+                <!-- Tracker -->
+                <div>
+                    <div class="text-sm font-semibold text-gray-700 mb-2">{{ form.f_tracker.label }}</div>
+                    {% for checkbox in form.f_tracker %}
+                    <label class="flex items-center gap-2 text-sm text-gray-600 mb-1 cursor-pointer">
+                        {{ checkbox.tag }} {{ checkbox.choice_label }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <!-- Statut -->
+                <div>
+                    <div class="text-sm font-semibold text-gray-700 mb-2">{{ form.f_status.label }}</div>
+                    {% for checkbox in form.f_status %}
+                    <label class="flex items-center gap-2 text-sm text-gray-600 mb-1 cursor-pointer">
+                        {{ checkbox.tag }} {{ checkbox.choice_label }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <!-- Priorité -->
+                <div>
+                    <div class="text-sm font-semibold text-gray-700 mb-2">{{ form.f_priority.label }}</div>
+                    {% for checkbox in form.f_priority %}
+                    <label class="flex items-center gap-2 text-sm text-gray-600 mb-1 cursor-pointer">
+                        {{ checkbox.tag }} {{ checkbox.choice_label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_assigned_to.label }}</label>
+                    {{ form.f_assigned_to }}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_fixed_version.label }}</label>
+                    {{ form.f_fixed_version }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_start_date_after.label }}</label>
+                    {{ form.f_start_date_after }}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_start_date_before.label }}</label>
+                    {{ form.f_start_date_before }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_due_date_after.label }}</label>
+                    {{ form.f_due_date_after }}
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_due_date_before.label }}</label>
+                    {{ form.f_due_date_before }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ form.f_is_evaluated.label }}</label>
+                    {{ form.f_is_evaluated }}
+                </div>
+                <div class="flex items-center gap-2 pt-6">
+                    {{ form.f_open_only }}
+                    <label for="{{ form.f_open_only.id_for_label }}"
+                           class="text-sm font-semibold text-gray-700 cursor-pointer">
+                        {{ form.f_open_only.label }}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="submit" class="btn-primary">Enregistrer</button>
+            <a href="{% url 'reports:list' %}" class="btn-secondary">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
