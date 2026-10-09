@@ -87,7 +87,15 @@ class MyPageView(LoginRequiredMixin, TemplateView):
         ctx["assigned_open_count"] = Issue.objects.filter(
             assigned_to=user, status__is_closed=False
         ).count()
-        ctx["project_count"] = Membership.objects.filter(user=user).count()
+        from projects.models import Project
+        if user.is_superuser:
+            ctx["project_count"] = Project.objects.count()
+        else:
+            member_ids = Membership.objects.filter(user=user).values_list("project_id", flat=True)
+            public_ids = Project.objects.filter(is_public=True).values_list("id", flat=True)
+            ctx["project_count"] = Project.objects.filter(
+                id__in=set(member_ids) | set(public_ids)
+            ).count()
 
         # Tickets surveillés ouverts
         ctx["watched_open_count"] = Watcher.objects.filter(
