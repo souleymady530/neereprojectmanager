@@ -142,6 +142,7 @@ class Issue(models.Model):
     done_ratio = models.PositiveSmallIntegerField(
         "avancement (%)", choices=DONE_RATIO_CHOICES, default=0
     )
+    is_evaluated = models.BooleanField("évalué", default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

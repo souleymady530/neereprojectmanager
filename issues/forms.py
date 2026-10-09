@@ -9,6 +9,7 @@ class IssueForm(forms.ModelForm):
             "tracker", "subject", "description", "status", "priority",
             "assigned_to", "fixed_version", "parent",
             "start_date", "due_date", "estimated_hours", "done_ratio",
+            "is_evaluated",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 6}),
