@@ -9,7 +9,7 @@ from django.views.generic import (
 )
 
 from core.permissions import ProjectPermissionRequiredMixin, get_user_project_permissions
-from .models import Project, Membership, Role
+from .models import Project, Membership, Role, ProjectInvitation
 from .forms import ProjectForm, MembershipForm
 
 
@@ -47,7 +47,10 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
     template_name = "projects/form.html"
 
     def form_valid(self, form):
-        project = form.save()
+        project = form.save(commit=False)
+        project.created_by = self.request.user
+        project.save()
+        form.save_m2m()
         # L'auteur devient automatiquement manager
         # JSONField __contains n'est pas supporté par SQLite → filtre Python
         default_role = next(
@@ -90,7 +93,7 @@ class ProjectSettingsView(ProjectPermissionRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["project"] = self.project
         ctx["memberships"] = self.project.memberships.select_related("user").prefetch_related("roles")
-        ctx["membership_form"] = MembershipForm()
+        ctx["membership_form"] = MembershipForm(project=self.project)
 
         versions = list(
             Version.objects.filter(project=self.project)
@@ -103,6 +106,16 @@ class ProjectSettingsView(ProjectPermissionRequiredMixin, TemplateView):
         for v in versions:
             v.progress_pct = int(v.closed_issues / v.total_issues * 100) if v.total_issues else 0
         ctx["versions"] = versions
+        ctx["invitations"] = (
+            ProjectInvitation.objects.filter(project=self.project, used_by__isnull=True)
+            .prefetch_related("roles")
+            .order_by("-created_at")
+        )
+        ctx["roles"] = Role.objects.all()
+        ctx["is_owner"] = (
+            self.request.user.is_superuser
+            or self.project.created_by_id == self.request.user.pk
+        )
         return ctx
 
 
@@ -111,12 +124,21 @@ class MemberAddView(ProjectPermissionRequiredMixin, CreateView):
     template_name = "projects/member_form.html"
     permission_required = "manage_members"
 
+    def get_form_kwargs(self):
+        kw = super().get_form_kwargs()
+        kw["project"] = self.project
+        return kw
+
     def form_valid(self, form):
-        membership = form.save(commit=False)
-        membership.project = self.project
-        membership.save()
-        form.save_m2m()
-        messages.success(self.request, "Membre ajouté.")
+        user = form.cleaned_data["user"]
+        # Garde-fou : si l'utilisateur est déjà membre, mettre à jour ses rôles
+        membership, created = Membership.objects.get_or_create(
+            user=user, project=self.project
+        )
+        if not created:
+            messages.warning(self.request, f"{user.get_full_name() or user.username} est déjà membre. Rôles mis à jour.")
+        membership.roles.set(form.cleaned_data["roles"])
+        messages.success(self.request, "Membre ajouté." if created else "Rôles mis à jour.")
         return redirect(reverse("projects:settings", kwargs={"identifier": self.project.identifier}))
 
 
@@ -127,6 +149,76 @@ class MemberRemoveView(ProjectPermissionRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse("projects:settings", kwargs={"identifier": self.project.identifier})
+
+
+class ProjectDeleteView(ProjectPermissionRequiredMixin, View):
+    """Suppression réservée au créateur du projet (ou superuser)."""
+    permission_required = "manage_project"
+
+    def _check_owner(self, request):
+        if request.user.is_superuser:
+            return True
+        return self.project.created_by_id == request.user.pk
+
+    def get(self, request, identifier):
+        if not self._check_owner(request):
+            messages.error(request, "Seul le créateur du projet peut le supprimer.")
+            return redirect(reverse("projects:settings", kwargs={"identifier": identifier}))
+        issue_count = self.project.issues.count()
+        return render(request, "projects/confirm_delete.html", {
+            "project": self.project,
+            "issue_count": issue_count,
+        })
+
+    def post(self, request, identifier):
+        if not self._check_owner(request):
+            messages.error(request, "Seul le créateur du projet peut le supprimer.")
+            return redirect(reverse("projects:settings", kwargs={"identifier": identifier}))
+        issue_count = self.project.issues.count()
+        if issue_count > 0:
+            typed = request.POST.get("confirm_name", "").strip()
+            if typed != self.project.name:
+                messages.error(request, "Le nom saisi ne correspond pas. Suppression annulée.")
+                return render(request, "projects/confirm_delete.html", {
+                    "project": self.project,
+                    "issue_count": issue_count,
+                    "error": True,
+                })
+        name = self.project.name
+        self.project.delete()
+        messages.success(request, f"Projet « {name} » supprimé.")
+        return redirect(reverse("projects:list"))
+
+
+class InvitationCreateView(ProjectPermissionRequiredMixin, View):
+    """Génère un lien d'invitation pour rejoindre le projet."""
+    permission_required = "manage_members"
+
+    def post(self, request, identifier):
+        import datetime
+        from django.utils import timezone
+
+        role_ids = request.POST.getlist("roles")
+        inv = ProjectInvitation.objects.create(
+            project=self.project,
+            created_by=request.user,
+            expires_at=timezone.now() + datetime.timedelta(days=7),
+        )
+        if role_ids:
+            inv.roles.set(Role.objects.filter(pk__in=role_ids))
+        messages.success(request, "Lien d'invitation généré (valable 7 jours).")
+        return redirect(reverse("projects:settings", kwargs={"identifier": self.project.identifier}))
+
+
+class InvitationRevokeView(ProjectPermissionRequiredMixin, View):
+    """Révoque (supprime) un lien d'invitation."""
+    permission_required = "manage_members"
+
+    def post(self, request, identifier, pk):
+        inv = get_object_or_404(ProjectInvitation, pk=pk, project=self.project)
+        inv.delete()
+        messages.success(request, "Invitation révoquée.")
+        return redirect(reverse("projects:settings", kwargs={"identifier": self.project.identifier}))
 
 
 class GanttView(ProjectPermissionRequiredMixin, View):

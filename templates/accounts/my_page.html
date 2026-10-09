@@ -36,7 +36,7 @@
     <div class="lg:col-span-2 space-y-4">
         <div class="flex items-center justify-between">
             <h2 class="text-base font-semibold text-gray-900">Tickets qui me sont assignés</h2>
-            <a href="{% url 'issues:list' %}" class="text-xs text-indigo-600 hover:underline">Voir tout</a>
+            <a href="{% url 'issues:kanban' %}" class="text-xs hover:underline" style="color:var(--rm-blue)">Voir tout</a>
         </div>
 
         {% if assigned_issues %}
@@ -157,7 +157,8 @@
         {% endif %}
 
         <a href="{% url 'projects:create' %}"
-           class="flex items-center justify-center gap-2 w-full text-sm bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-medium transition-colors shadow-sm">
+           class="flex items-center justify-center gap-2 w-full text-sm text-white py-2.5 rounded-xl font-medium transition-colors shadow-sm"
+           style="background-color: var(--rm-blue-btn);" onmouseover="this.style.backgroundColor='var(--rm-blue-btn-hover)'" onmouseout="this.style.backgroundColor='var(--rm-blue-btn)'">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -180,7 +181,7 @@
                     </svg>
                     Préférences notification
                 </a>
-                <a href="{% url 'issues:list' %}" class="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-700 transition-colors">
+                <a href="{% url 'issues:kanban' %}" class="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>

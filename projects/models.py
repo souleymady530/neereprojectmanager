@@ -1,6 +1,9 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -67,6 +70,14 @@ class Project(models.Model):
     status = models.CharField(
         "statut", max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE
     )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_projects",
+        verbose_name="créé par",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -113,3 +124,53 @@ class Membership(models.Model):
 
     def __str__(self):
         return f"{self.user} → {self.project}"
+
+
+class ProjectInvitation(models.Model):
+    """Lien d'invitation unique permettant à quelqu'un de s'inscrire et rejoindre un projet."""
+
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="invitations"
+    )
+    roles = models.ManyToManyField(Role, blank=True, verbose_name="rôles attribués")
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_invitations",
+        verbose_name="créé par",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(
+        "expire le", null=True, blank=True,
+        help_text="Laisser vide = pas d'expiration automatique."
+    )
+    used_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="used_invitations",
+        verbose_name="utilisé par",
+    )
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "invitation"
+        verbose_name_plural = "invitations"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Invitation {self.project} ({self.token})"
+
+    @property
+    def is_valid(self):
+        if self.used_by_id:
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
+
+    def get_accept_url(self):
+        return reverse("accounts:accept_invitation", kwargs={"token": self.token})

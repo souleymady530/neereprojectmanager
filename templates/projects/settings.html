@@ -59,14 +59,11 @@
                 {% csrf_token %}
                 {% for field in membership_form %}
                 <div>
-                    <label class="block text-xs font-medium mb-1">{{ field.label }}</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
                     {{ field }}
                 </div>
                 {% endfor %}
-                <button type="submit"
-                    class="bg-slate-700 text-white text-sm px-4 py-1.5 rounded hover:bg-slate-800">
-                    Ajouter
-                </button>
+                <button type="submit" class="btn-primary">Ajouter</button>
             </form>
         </div>
     </div>
@@ -74,22 +71,125 @@
     <!-- Infos du projet -->
     <div>
         <h2 class="text-lg font-semibold mb-3">Informations</h2>
-        <div class="bg-white rounded-xl shadow p-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-3">
             <a href="{% url 'projects:edit' project.identifier %}"
-               class="block text-sm text-blue-600 hover:underline">
-                Modifier les informations du projet →
+               class="flex items-center gap-2 text-sm hover:underline"
+               style="color: var(--rm-blue);">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Modifier les informations du projet
             </a>
+            {% if is_owner %}
+            <div class="border-t border-gray-100 pt-3">
+                <a href="{% url 'projects:delete' project.identifier %}"
+                   class="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 hover:underline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Supprimer le projet…
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 
+</div>
+
+<!-- Liens d'invitation -->
+<div class="mt-8">
+    <h2 class="text-lg font-semibold mb-3">Liens d'invitation</h2>
+    <p class="text-sm text-gray-500 mb-4">
+        Générez un lien unique à partager. La personne pourra créer son compte et rejoindra automatiquement le projet.
+        Chaque lien est à usage unique et expire au bout de 7 jours.
+    </p>
+
+    <!-- Générer un nouveau lien -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Générer un lien</h3>
+        <form method="post" action="{% url 'projects:invitation_create' project.identifier %}" class="space-y-3">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Rôles attribués à l'invité</label>
+                <div class="flex flex-wrap gap-3">
+                    {% for role in roles %}
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="checkbox" name="roles" value="{{ role.pk }}">
+                        {{ role.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn-primary">
+                Générer le lien
+            </button>
+        </form>
+    </div>
+
+    <!-- Liens actifs -->
+    {% if invitations %}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Lien</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Rôles</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Expire</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Créé par</th>
+                    <th class="px-4 py-2.5"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for inv in invitations %}
+                <tr class="{% if not inv.is_valid %}opacity-50{% endif %}">
+                    <td class="px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                            <input type="text" readonly
+                                   value="{{ request.scheme }}://{{ request.get_host }}{{ inv.get_accept_url }}"
+                                   class="text-xs font-mono bg-gray-50 border border-gray-200 rounded px-2 py-1 w-64 cursor-pointer"
+                                   onclick="this.select(); document.execCommand('copy'); showCopied(this);"
+                                   title="Cliquer pour copier">
+                            <span class="text-xs text-gray-400 copied-label hidden">Copié !</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-2.5 text-gray-600 text-xs">
+                        {% for role in inv.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% empty %}–{% endfor %}
+                    </td>
+                    <td class="px-4 py-2.5 text-xs text-gray-500">
+                        {% if inv.expires_at %}{{ inv.expires_at|date:"d/m/Y H:i" }}{% else %}–{% endif %}
+                    </td>
+                    <td class="px-4 py-2.5 text-xs text-gray-500">
+                        {{ inv.created_by.get_full_name|default:inv.created_by.username|default:"–" }}
+                    </td>
+                    <td class="px-4 py-2.5 text-right">
+                        <form method="post"
+                              action="{% url 'projects:invitation_revoke' project.identifier inv.pk %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="text-xs hover:underline"
+                                    style="color: var(--rm-red);"
+                                    onclick="return confirm('Révoquer ce lien ?')">
+                                Révoquer
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">Aucun lien d'invitation actif.</p>
+    {% endif %}
 </div>
 
 <!-- Versions -->
 <div class="mt-8">
     <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-semibold">Versions</h2>
-        <a href="{% url 'projects:version_create' project.identifier %}"
-           class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">
+        <a href="{% url 'projects:version_create' project.identifier %}" class="btn-primary">
             + Nouvelle version
         </a>
     </div>
@@ -147,4 +247,14 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showCopied(input) {
+    const label = input.nextElementSibling;
+    label.classList.remove('hidden');
+    setTimeout(() => label.classList.add('hidden'), 2000);
+}
+</script>
 {% endblock %}

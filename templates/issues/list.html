@@ -19,15 +19,23 @@
         </h1>
         <p class="text-sm text-gray-500 mt-0.5">{{ page_obj.paginator.count }} ticket{{ page_obj.paginator.count|pluralize }} au total</p>
     </div>
+    <div class="flex items-center gap-2">
+        <!-- Vue toggle -->
+        <div class="inline-flex rounded-lg border border-gray-300 bg-white overflow-hidden text-sm">
+            <a href="{% if project %}{% url 'projects:issue_list' project.identifier %}{% else %}{% url 'issues:kanban' %}{% endif %}"
+               class="px-3 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors">Kanban</a>
+            <span class="px-3 py-1.5 font-semibold text-white"
+                  style="background-color: var(--rm-blue-btn);">Liste</span>
+        </div>
     {% if project %}
-    <a href="{% url 'projects:issue_create' project.identifier %}"
-       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors">
+    <a href="{% url 'projects:issue_create' project.identifier %}" class="btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
         Nouveau ticket
     </a>
     {% endif %}
+    </div>
 </div>
 
 <!-- Filtres -->
@@ -43,10 +51,7 @@
         </div>
         {% endfor %}
         <div class="flex items-end gap-2 col-span-2 sm:col-span-3 lg:col-span-5">
-            <button type="submit"
-                    class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors">
-                Filtrer
-            </button>
+            <button type="submit" class="btn-primary">Filtrer</button>
             <a href="?" class="px-4 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm rounded-lg transition-colors">
                 Réinitialiser
             </a>

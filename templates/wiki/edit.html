@@ -77,17 +77,12 @@
             </div>
 
             <!-- Actions -->
-            <div class="flex gap-3 pt-2">
-                <button type="submit"
-                    class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 text-sm">
-                    Enregistrer
-                </button>
+            <div class="flex gap-3 pt-3 border-t border-gray-100">
+                <button type="submit" class="btn-primary">Enregistrer</button>
                 {% if wiki_page %}
-                <a href="{{ wiki_page.get_absolute_url }}"
-                   class="px-6 py-2 rounded border text-sm hover:bg-gray-50">Annuler</a>
+                <a href="{{ wiki_page.get_absolute_url }}" class="btn-secondary">Annuler</a>
                 {% else %}
-                <a href="{% url 'projects:wiki_home' project.identifier %}"
-                   class="px-6 py-2 rounded border text-sm hover:bg-gray-50">Annuler</a>
+                <a href="{% url 'projects:wiki_home' project.identifier %}" class="btn-secondary">Annuler</a>
                 {% endif %}
             </div>
         </form>

@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% load issue_extras %}
+{% block title %}Kanban{% if project %} – {{ project.name }}{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+{% if project %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › Tickets
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── Kanban board layout ─────────────────────────────── */
+    #kanban-board {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        min-height: calc(100vh - 220px);
+        align-items: flex-start;
+    }
+
+    .kanban-col {
+        flex: 0 0 270px;
+        display: flex;
+        flex-direction: column;
+        background: #eaeef2;
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .kanban-col-header {
+        padding: 0.65rem 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 3px solid transparent;
+    }
+
+    .kanban-col-body {
+        flex: 1;
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-height: 80px;
+        transition: background 0.15s;
+    }
+
+    .kanban-col-body.drag-over {
+        background: #d5dfe8;
+    }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .kanban-card {
+        background: #fff;
+        border: 1px solid #d8dde3;
+        border-radius: 0.5rem;
+        padding: 0.65rem 0.75rem;
+        cursor: grab;
+        transition: box-shadow 0.15s, transform 0.1s;
+        user-select: none;
+    }
+
+    .kanban-card:hover {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    }
+
+    .kanban-card.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+        transform: rotate(1.5deg);
+    }
+
+    /* ── Priority dot ────────────────────────────────────── */
+    .prio-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 3px;
+    }
+
+    /* ── Assignee avatar ─────────────────────────────────── */
+    .assignee-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: #fff;
+        background-color: var(--rm-blue-btn);
+        flex-shrink: 0;
+    }
+
+    /* ── Closed column ───────────────────────────────────── */
+    .kanban-col.closed-col .kanban-col-header {
+        background: #e2e8ed;
+        color: #6b7280;
+    }
+    .kanban-col.closed-col .kanban-card {
+        opacity: 0.65;
+    }
+
+    /* scrollbar subtle */
+    #kanban-board::-webkit-scrollbar { height: 6px; }
+    #kanban-board::-webkit-scrollbar-track { background: transparent; }
+    #kanban-board::-webkit-scrollbar-thumb { background: #c5cdd5; border-radius: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Header ─────────────────────────────────────────────── -->
+<div class="flex items-center justify-between mb-4">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            Tickets{% if project %} — {{ project.name }}{% endif %}
+        </h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ total }} ticket{{ total|pluralize }} au total</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <!-- Vue toggle -->
+        <div class="inline-flex rounded-lg border border-gray-300 bg-white overflow-hidden text-sm">
+            <span class="px-3 py-1.5 font-semibold text-white"
+                  style="background-color: var(--rm-blue-btn);">
+                Kanban
+            </span>
+            <a href="{% if project %}{% url 'projects:issue_list_table' project.identifier %}{% else %}{% url 'issues:list' %}{% endif %}"
+               class="px-3 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors">
+                Liste
+            </a>
+        </div>
+        {% if project and "add_issues" in user_perms %}
+        <a href="{% url 'projects:issue_create' project.identifier %}" class="btn-primary">
+            + Nouveau ticket
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Filtres ────────────────────────────────────────────── -->
+<details class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5"
+         {% if request.GET %}open{% endif %}>
+    <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none">
+        Filtres{% if request.GET %} <span class="font-normal" style="color:var(--rm-blue)">(actifs)</span>{% endif %}
+    </summary>
+    <form method="get" class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
+        {% for field in filter.form %}
+        <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">{{ field.label }}</label>
+            {{ field }}
+        </div>
+        {% endfor %}
+        <div class="flex items-end gap-2 col-span-2 sm:col-span-3 lg:col-span-5">
+            <button type="submit" class="btn-primary">Filtrer</button>
+            <a href="?" class="btn-secondary">Réinitialiser</a>
+        </div>
+    </form>
+</details>
+
+<!-- ── Kanban board ───────────────────────────────────────── -->
+<div id="kanban-board" data-csrf="{{ csrf_token }}">
+    {% for status in statuses %}
+    {% with cards=columns|get_item:status.pk %}
+    <div class="kanban-col {% if status.is_closed %}closed-col{% endif %}"
+         data-status-id="{{ status.pk }}"
+         data-status-name="{{ status.name }}">
+
+        <!-- Column header -->
+        <div class="kanban-col-header"
+             style="background: {% if status.is_closed %}#e2e8ed; color:#6b7280;{% else %}#dce6ef; color:#3D4B5A;{% endif %};
+                    border-bottom-color: {% if status.is_closed %}#9ca3af{% else %}var(--rm-blue-btn){% endif %};">
+            <span>{{ status.name }}</span>
+            <span class="text-xs font-bold rounded-full px-2 py-0.5"
+                  style="background: rgba(0,0,0,0.1);">
+                {{ cards|length }}
+            </span>
+        </div>
+
+        <!-- Cards list -->
+        <div class="kanban-col-body"
+             data-status-id="{{ status.pk }}"
+             ondragover="onDragOver(event)"
+             ondragleave="onDragLeave(event)"
+             ondrop="onDrop(event)">
+
+            {% for issue in cards %}
+            <div class="kanban-card"
+                 draggable="true"
+                 data-pk="{{ issue.pk }}"
+                 data-status-id="{{ status.pk }}"
+                 ondragstart="onDragStart(event)"
+                 ondragend="onDragEnd(event)">
+
+                <!-- Top row: tracker badge + priority dot -->
+                <div class="flex items-start justify-between gap-1 mb-1.5">
+                    <span class="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium leading-none">
+                        {{ issue.tracker }}
+                    </span>
+                    <span class="prio-dot"
+                          style="background-color: {{ issue.priority.color|default:'#9ca3af' }};"
+                          title="{{ issue.priority }}"></span>
+                </div>
+
+                <!-- Subject (link) -->
+                <a href="{{ issue.get_absolute_url }}"
+                   class="block text-sm font-medium text-gray-800 hover:underline leading-snug mb-2"
+                   style="hover-color: var(--rm-blue);"
+                   title="{{ issue.subject }}"
+                   onclick="event.stopPropagation()">
+                    {{ issue.subject|truncatechars:65 }}
+                </a>
+
+                <!-- Bottom row: #id + assignee -->
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-xs text-gray-400 font-mono">#{{ issue.pk }}</span>
+                    {% if issue.assigned_to %}
+                    <span class="assignee-avatar"
+                          title="{{ issue.assigned_to.get_full_name }}">
+                        {{ issue.assigned_to.first_name|first|upper }}{{ issue.assigned_to.last_name|first|upper }}
+                    </span>
+                    {% else %}
+                    <span class="text-xs text-gray-300">–</span>
+                    {% endif %}
+                </div>
+
+                {% if issue.due_date %}
+                <div class="mt-1.5 text-xs {% if issue.due_date < today %}text-red-500{% else %}text-gray-400{% endif %}">
+                    ↯ {{ issue.due_date|date:"d/m/Y" }}
+                </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+
+        </div><!-- /.kanban-col-body -->
+    </div>
+    {% endwith %}
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const board = document.getElementById('kanban-board');
+    const CSRF  = board.dataset.csrf;
+
+    let draggedCard  = null;
+    let sourceColId  = null;
+
+    // ── Drag start ──────────────────────────────────────────
+    window.onDragStart = function (e) {
+        draggedCard = e.currentTarget;
+        sourceColId = draggedCard.dataset.statusId;
+        draggedCard.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedCard.dataset.pk);
+    };
+
+    window.onDragEnd = function (e) {
+        if (draggedCard) draggedCard.classList.remove('dragging');
+        document.querySelectorAll('.kanban-col-body.drag-over')
+                .forEach(el => el.classList.remove('drag-over'));
+    };
+
+    // ── Drag over column ────────────────────────────────────
+    window.onDragOver = function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        e.currentTarget.classList.add('drag-over');
+    };
+
+    window.onDragLeave = function (e) {
+        e.currentTarget.classList.remove('drag-over');
+    };
+
+    // ── Drop ────────────────────────────────────────────────
+    window.onDrop = function (e) {
+        e.preventDefault();
+        const colBody  = e.currentTarget;
+        colBody.classList.remove('drag-over');
+
+        const newStatusId = colBody.dataset.statusId;
+        if (!draggedCard || newStatusId === sourceColId) return;
+
+        const issuePk = draggedCard.dataset.pk;
+
+        // Optimistic DOM move
+        draggedCard.dataset.statusId = newStatusId;
+        sourceColId = newStatusId;
+        colBody.appendChild(draggedCard);
+        updateCounter(newStatusId, +1);
+        updateCounter(getSourceId(issuePk, newStatusId), -1);
+
+        // Persist via fetch
+        fetch(`/issues/${issuePk}/move/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': CSRF,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `status_id=${newStatusId}`,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) {
+                alert('Erreur : ' + (data.error || 'Impossible de déplacer ce ticket.'));
+                location.reload();
+            }
+        })
+        .catch(() => location.reload());
+    };
+
+    // ── Counter helpers ──────────────────────────────────────
+    function updateCounter(statusId, delta) {
+        const col = document.querySelector(`.kanban-col[data-status-id="${statusId}"]`);
+        if (!col) return;
+        const badge = col.querySelector('.kanban-col-header span:last-child');
+        if (!badge) return;
+        badge.textContent = Math.max(0, parseInt(badge.textContent, 10) + delta);
+    }
+
+    // track original column before DOM move is complete
+    function getSourceId(pk, currentNew) {
+        // We already moved the card; the old source was stored in sourceColId before the first move
+        // Use a WeakMap approach: store original on dragstart
+        return draggedCard._origStatusId || currentNew;
+    }
+
+    // patch onDragStart to store original
+    const _orig = window.onDragStart;
+    window.onDragStart = function (e) {
+        e.currentTarget._origStatusId = e.currentTarget.dataset.statusId;
+        _orig(e);
+    };
+
+    // ── Fix drop counter: use stored original ────────────────
+    window.onDrop = function (e) {
+        e.preventDefault();
+        const colBody     = e.currentTarget;
+        colBody.classList.remove('drag-over');
+
+        const newStatusId = colBody.dataset.statusId;
+        if (!draggedCard || newStatusId === sourceColId) return;
+
+        const issuePk   = draggedCard.dataset.pk;
+        const oldStatus = draggedCard._origStatusId || sourceColId;
+
+        draggedCard.dataset.statusId    = newStatusId;
+        draggedCard._origStatusId       = newStatusId;
+        sourceColId = newStatusId;
+
+        colBody.appendChild(draggedCard);
+        updateCounter(newStatusId, +1);
+        updateCounter(oldStatus, -1);
+
+        fetch(`/issues/${issuePk}/move/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': CSRF,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `status_id=${newStatusId}`,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok) {
+                alert('Erreur : ' + (data.error || 'Impossible de déplacer ce ticket.'));
+                location.reload();
+            }
+        })
+        .catch(() => location.reload());
+    };
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Supprimer {{ project.name }}{% endblock %}
+
+{% block breadcrumb %}
+<div class="px-6 pt-4 text-sm text-gray-500">
+    <a href="{% url 'projects:list' %}" class="hover:underline">Projets</a>
+    › <a href="{{ project.get_absolute_url }}" class="hover:underline">{{ project.name }}</a>
+    › <span class="text-red-600 font-medium">Supprimer</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+
+    <!-- Icône danger -->
+    <div class="flex items-center gap-4 mb-6">
+        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Supprimer le projet</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Cette action est <strong>irréversible</strong>.</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+
+        <!-- Résumé du projet -->
+        <div class="mb-5 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm space-y-1">
+            <div class="flex justify-between">
+                <span class="text-gray-500">Projet</span>
+                <span class="font-semibold text-gray-800">{{ project.name }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Identifiant</span>
+                <code class="text-xs bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono text-gray-600">{{ project.identifier }}</code>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Tickets</span>
+                <span class="font-semibold {% if issue_count > 0 %}text-red-600{% else %}text-gray-700{% endif %}">
+                    {{ issue_count }} ticket{{ issue_count|pluralize }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Membres</span>
+                <span class="font-semibold text-gray-700">{{ project.memberships.count }} membre{{ project.memberships.count|pluralize }}</span>
+            </div>
+        </div>
+
+        <!-- Avertissement selon le nombre de tickets -->
+        {% if issue_count > 0 %}
+        <div class="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <strong>Attention :</strong> Ce projet contient {{ issue_count }} ticket{{ issue_count|pluralize }}.
+            Toutes les données associées (tickets, commentaires, temps saisi, wiki, versions) seront
+            définitivement supprimées.
+        </div>
+
+        <form method="post" id="delete-form">
+            {% csrf_token %}
+
+            <div class="mb-5">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pour confirmer, saisissez exactement le nom du projet :
+                </label>
+                <p class="text-sm font-mono bg-gray-100 border border-gray-300 rounded px-3 py-2 mb-3 select-all text-gray-800">
+                    {{ project.name }}
+                </p>
+                <input type="text" name="confirm_name" id="confirm_name"
+                       placeholder="Saisissez le nom du projet…"
+                       autocomplete="off"
+                       class="{% if error %}border-red-400{% endif %}">
+                {% if error %}
+                <p class="text-sm mt-1.5" style="color: var(--rm-red);">
+                    Le nom ne correspond pas. Réessayez.
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" id="submit-btn"
+                        class="btn-danger opacity-40 cursor-not-allowed"
+                        disabled>
+                    Supprimer définitivement
+                </button>
+                <a href="{{ project.get_absolute_url }}" class="btn-secondary">Annuler</a>
+            </div>
+        </form>
+
+        {% else %}
+        <!-- Pas de tickets : simple confirmation -->
+        <p class="text-sm text-gray-600 mb-5">
+            Ce projet ne contient aucun ticket. Sa suppression effacera également les membres,
+            les versions et les pages wiki associées.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex gap-3">
+                <button type="submit" class="btn-danger">Supprimer le projet</button>
+                <a href="{{ project.get_absolute_url }}" class="btn-secondary">Annuler</a>
+            </div>
+        </form>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if issue_count > 0 %}
+<script>
+(function () {
+    const input  = document.getElementById('confirm_name');
+    const btn    = document.getElementById('submit-btn');
+    const target = "{{ project.name|escapejs }}";
+
+    input.addEventListener('input', function () {
+        const match = this.value === target;
+        btn.disabled = !match;
+        btn.classList.toggle('opacity-40', !match);
+        btn.classList.toggle('cursor-not-allowed', !match);
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

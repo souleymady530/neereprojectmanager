@@ -1,23 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Inscription{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto mt-16 bg-white rounded-xl shadow p-8">
-    <h1 class="text-2xl font-bold mb-6">Créer un compte</h1>
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {% for field in form %}
-        <div>
-            <label class="block text-sm font-medium mb-1">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <p class="text-red-600 text-xs mt-1">{{ field.errors.0 }}</p>
-            {% endif %}
+<div class="max-w-md mx-auto mt-10">
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg mb-4"
+             style="background-color: var(--rm-red);">
+            <span class="text-2xl font-bold text-white">RM</span>
         </div>
-        {% endfor %}
-        <button type="submit"
-            class="w-full bg-slate-700 text-white py-2 rounded hover:bg-slate-800">
-            Créer le compte
-        </button>
-    </form>
+        <h1 class="text-2xl font-bold text-gray-900">Créer un compte</h1>
+        <p class="text-sm text-gray-500 mt-1">Rejoignez votre équipe sur Redmine</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-sm mt-1" style="color: var(--rm-red);">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="pt-1">
+                <button type="submit" class="w-full btn-primary justify-center py-2.5 rounded-xl">
+                    Créer le compte
+                </button>
+            </div>
+        </form>
+        <p class="mt-5 text-sm text-center text-gray-500">
+            Déjà un compte ?
+            <a href="{% url 'login' %}" class="font-medium hover:underline" style="color: var(--rm-blue);">
+                Se connecter
+            </a>
+        </p>
+    </div>
 </div>
 {% endblock %}

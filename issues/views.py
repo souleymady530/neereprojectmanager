@@ -1,13 +1,16 @@
+from collections import defaultdict
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import DetailView, CreateView, UpdateView, View, ListView
 
 from core.permissions import ProjectPermissionRequiredMixin, get_user_project_permissions
 from core.htmx import is_htmx
-from .models import Issue, Journal, Watcher
+from .models import Issue, IssueStatus, Journal, Watcher
 from .forms import IssueForm, JournalNoteForm, StatusUpdateForm, DoneRatioUpdateForm
 from .filters import IssueFilter
 from .services import update_issue
@@ -250,3 +253,70 @@ class IssueWatchToggleView(LoginRequiredMixin, View):
                 "is_watching": is_watching,
             })
         return redirect(issue.get_absolute_url())
+
+
+class KanbanView(LoginRequiredMixin, View):
+    """Tableau Kanban : colonnes = statuts ouverts, cartes = tickets."""
+
+    template_name = "issues/kanban.html"
+
+    def get(self, request, identifier=None):
+        from projects.models import Project
+
+        if identifier:
+            project = get_object_or_404(Project, identifier=identifier)
+            qs = Issue.objects.filter(project=project)
+            user_perms = get_user_project_permissions(request.user, project)
+        else:
+            project = None
+            qs = Issue.objects.visible_to(request.user)
+            user_perms = set()
+
+        statuses = list(IssueStatus.objects.order_by("position"))
+
+        qs = qs.select_related(
+            "tracker", "status", "priority", "assigned_to", "project"
+        ).order_by("priority__position", "-updated_at")
+
+        f = IssueFilter(request.GET, queryset=qs)
+        filtered_qs = list(f.qs)
+
+        columns = {s.pk: [] for s in statuses}
+        for issue in filtered_qs:
+            if issue.status_id in columns:
+                columns[issue.status_id].append(issue)
+
+        from datetime import date
+        return render(request, self.template_name, {
+            "project": project,
+            "statuses": statuses,
+            "columns": columns,
+            "filter": f,
+            "user_perms": user_perms,
+            "total": len(filtered_qs),
+            "today": date.today(),
+        })
+
+
+class KanbanMoveView(LoginRequiredMixin, View):
+    """Déplacer une carte Kanban vers un nouveau statut (appelé en JS fetch)."""
+
+    def post(self, request, pk):
+        issue = get_object_or_404(Issue.objects.visible_to(request.user), pk=pk)
+        user_perms = get_user_project_permissions(request.user, issue.project)
+
+        if "edit_issues" not in user_perms:
+            return JsonResponse({"ok": False, "error": "Permission refusée"}, status=403)
+
+        status_id = request.POST.get("status_id")
+        try:
+            new_status = IssueStatus.objects.get(pk=status_id)
+        except IssueStatus.DoesNotExist:
+            return JsonResponse({"ok": False, "error": "Statut introuvable"}, status=400)
+
+        allowed = issue.allowed_statuses_for(request.user)
+        if new_status not in allowed and not request.user.is_superuser:
+            return JsonResponse({"ok": False, "error": "Transition non autorisée"}, status=403)
+
+        update_issue(issue, request.user, {"status": new_status})
+        return JsonResponse({"ok": True, "status_name": new_status.name})

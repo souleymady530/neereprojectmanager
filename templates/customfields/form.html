@@ -11,7 +11,7 @@
 
       {% for field in form %}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label class="block text-sm font-semibold text-gray-700 mb-1.5">
           {{ field.label }}
           {% if field.field.required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
         </label>
@@ -20,20 +20,14 @@
           <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
         {% endif %}
         {% if field.errors %}
-          <p class="text-red-600 text-xs mt-1">{{ field.errors.0 }}</p>
+          <p class="text-sm mt-1" style="color: var(--rm-red);">{{ field.errors.0 }}</p>
         {% endif %}
       </div>
       {% endfor %}
 
-      <div class="flex gap-3 pt-2">
-        <button type="submit"
-                class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md shadow-sm transition-colors">
-          Enregistrer
-        </button>
-        <a href="{% url 'customfields:list' %}"
-           class="px-5 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors">
-          Annuler
-        </a>
+      <div class="flex gap-3 pt-3 border-t border-gray-100">
+        <button type="submit" class="btn-primary">Enregistrer</button>
+        <a href="{% url 'customfields:list' %}" class="btn-secondary">Annuler</a>
       </div>
     </form>
   </div>
