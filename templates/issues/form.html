@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-3xl">
+<div class="max-w-6xl">
     <h1 class="text-2xl font-bold text-gray-900 mb-1">
         {% if object %}Modifier le ticket #{{ object.pk }}{% else %}Nouveau ticket{% endif %}
     </h1>
@@ -23,15 +23,12 @@
     <div class="mb-6"></div>
     {% endif %}
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="post" class="space-y-5">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <form method="post" class="space-y-6">
             {% csrf_token %}
 
-            {# Macro helper : rendu d'un seul champ #}
-            {% with noop=0 %}{% endwith %}
-
-            <!-- Ligne 1 : Tracker | Sujet -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Ligne 1 : Tracker (1/3) | Sujet (2/3) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {% for field in form %}{% if field.html_name == "tracker" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -42,7 +39,7 @@
                 </div>
                 {% endif %}{% endfor %}
                 {% for field in form %}{% if field.html_name == "subject" %}
-                <div>
+                <div class="sm:col-span-2">
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
                         {{ field.label }}{% if field.field.required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
                     </label>
@@ -52,8 +49,8 @@
                 {% endif %}{% endfor %}
             </div>
 
-            <!-- Ligne 2 : Statut | Priorité -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Ligne 2 : Statut | Priorité | Assigné à -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {% for field in form %}{% if field.html_name == "status" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -72,10 +69,6 @@
                     {% if field.errors %}<p class="text-sm mt-1" style="color:var(--rm-red);">{{ field.errors.0 }}</p>{% endif %}
                 </div>
                 {% endif %}{% endfor %}
-            </div>
-
-            <!-- Ligne 3 : Assigné à | Version cible -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {% for field in form %}{% if field.html_name == "assigned_to" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
@@ -83,6 +76,10 @@
                     {% if field.errors %}<p class="text-sm mt-1" style="color:var(--rm-red);">{{ field.errors.0 }}</p>{% endif %}
                 </div>
                 {% endif %}{% endfor %}
+            </div>
+
+            <!-- Ligne 3 : Version cible | Date début | Date échéance -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {% for field in form %}{% if field.html_name == "fixed_version" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
@@ -90,10 +87,6 @@
                     {% if field.errors %}<p class="text-sm mt-1" style="color:var(--rm-red);">{{ field.errors.0 }}</p>{% endif %}
                 </div>
                 {% endif %}{% endfor %}
-            </div>
-
-            <!-- Ligne 4 : Date début | Date échéance -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {% for field in form %}{% if field.html_name == "start_date" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
@@ -110,8 +103,8 @@
                 {% endif %}{% endfor %}
             </div>
 
-            <!-- Ligne 5 : Heures estimées | Avancement -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Ligne 4 : Heures estimées | Avancement | Ticket parent -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                 {% for field in form %}{% if field.html_name == "estimated_hours" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
@@ -126,10 +119,6 @@
                     {% if field.errors %}<p class="text-sm mt-1" style="color:var(--rm-red);">{{ field.errors.0 }}</p>{% endif %}
                 </div>
                 {% endif %}{% endfor %}
-            </div>
-
-            <!-- Ligne 6 : Ticket parent | Évalué -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                 {% for field in form %}{% if field.html_name == "parent" %}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
@@ -137,20 +126,20 @@
                     {% if field.errors %}<p class="text-sm mt-1" style="color:var(--rm-red);">{{ field.errors.0 }}</p>{% endif %}
                 </div>
                 {% endif %}{% endfor %}
-                {% for field in form %}{% if field.html_name == "is_evaluated" %}
-                <div class="flex items-center gap-2 pb-1">
-                    {{ field }}
-                    <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-gray-700 cursor-pointer select-none">
-                        {{ field.label }}
-                    </label>
-                    {% if field.errors %}<p class="text-sm mt-1" style="color:var(--rm-red);">{{ field.errors.0 }}</p>{% endif %}
-                </div>
-                {% endif %}{% endfor %}
             </div>
 
-            <!-- Champs personnalisés (2 colonnes, auto-pairés) -->
-            {% with has_cf=False %}{% endwith %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Évalué -->
+            {% for field in form %}{% if field.html_name == "is_evaluated" %}
+            <div class="flex items-center gap-2">
+                {{ field }}
+                <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-gray-700 cursor-pointer select-none">
+                    {{ field.label }}
+                </label>
+            </div>
+            {% endif %}{% endfor %}
+
+            <!-- Champs personnalisés -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {% for field in form %}
             {% if field.html_name|slice:":3" == "cf_" %}
                 <div>
@@ -165,7 +154,7 @@
             {% endfor %}
             </div>
 
-            <!-- Dernière ligne : Description (pleine largeur) -->
+            <!-- Description (pleine largeur) -->
             {% for field in form %}{% if field.html_name == "description" %}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}</label>
@@ -174,7 +163,7 @@
             </div>
             {% endif %}{% endfor %}
 
-            <div class="flex gap-3 pt-3 border-t border-gray-100">
+            <div class="flex gap-3 pt-4 border-t border-gray-100">
                 <button type="submit" class="btn-primary">Enregistrer</button>
                 <a href="{% if object %}{{ object.get_absolute_url }}{% elif project %}{% url 'projects:issue_list' project.identifier %}{% else %}{% url 'issues:list' %}{% endif %}"
                    class="btn-secondary">Annuler</a>
@@ -192,7 +181,7 @@
         border: 1px solid #d1d5db;
         border-radius: 0 0 0.5rem 0.5rem;
         font-size: 0.875rem;
-        min-height: 160px;
+        min-height: 200px;
         background: var(--bg-input, #fff);
         color: var(--text-primary, #111827);
     }
@@ -234,7 +223,7 @@
                 "preview", "side-by-side", "fullscreen",
             ],
             status: false,
-            minHeight: "160px",
+            minHeight: "200px",
         });
     }
 </script>
