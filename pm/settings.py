@@ -169,6 +169,12 @@ SITE_URL = config("SITE_URL", default="http://localhost:8000")
 # ---------------------------------------------------------------------------
 # Sécurité HTTPS (actif uniquement en production)
 # ---------------------------------------------------------------------------
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:8000",
+    cast=Csv(),
+)
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
