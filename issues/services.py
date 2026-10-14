@@ -105,6 +105,13 @@ def update_issue(issue: Issue, user, data: dict, note: str = "") -> Journal | No
     (ex. {"status": <IssueStatus>}) ou des valeurs scalaires (ex. {"done_ratio": 50}).
     Retourne None si aucune modification et aucune note.
     """
+    # Recharger depuis la DB : Django's ModelForm.is_valid() modifie l'instance
+    # en place, donc issue porte déjà les nouvelles valeurs à ce stade.
+    try:
+        old = Issue.objects.get(pk=issue.pk)
+    except Issue.DoesNotExist:
+        old = issue
+
     details = []
 
     for field_name, new_value in data.items():
@@ -113,15 +120,15 @@ def update_issue(issue: Issue, user, data: dict, note: str = "") -> Journal | No
 
         id_attr, label_fr, get_old_label, get_new_label = TRACKED_FIELDS[field_name]
 
-        # Comparer les IDs pour détecter un vrai changement
-        old_id = getattr(issue, id_attr)
+        # Comparer l'ancienne valeur (DB) avec la nouvelle valeur du formulaire
+        old_id = getattr(old, id_attr)
         new_id = new_value.pk if hasattr(new_value, "pk") else new_value
 
         if old_id == new_id:
             continue
 
         # Stocker des libellés lisibles
-        old_label = get_old_label(issue)
+        old_label = get_old_label(old)
         new_label = get_new_label(new_value)
 
         details.append(JournalDetail(
@@ -130,13 +137,11 @@ def update_issue(issue: Issue, user, data: dict, note: str = "") -> Journal | No
             new_value=new_label,
         ))
 
-        # Appliquer la modification sur l'objet
-        setattr(issue, field_name, new_value)
+    # Sauvegarder quoi qu'il arrive (l'instance a déjà les nouvelles valeurs)
+    issue.save()
 
     if not details and not note:
         return None
-
-    issue.save()
 
     journal = Journal.objects.create(issue=issue, user=user, notes=note)
     for detail in details:
