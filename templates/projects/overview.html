@@ -9,21 +9,38 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex items-start justify-between mb-6">
-    <div>
-        <h1 class="text-2xl font-bold">{{ project.name }}</h1>
+
+<!-- En-tête projet -->
+<div class="flex items-start justify-between mb-6 gap-4">
+    <div class="flex-1 min-w-0">
+        <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ project.name }}</h1>
         {% if project.description %}
-        <p class="text-gray-600 mt-1">{{ project.description }}</p>
+        <div class="bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+            <p class="text-gray-700 text-sm leading-relaxed">{{ project.description }}</p>
+        </div>
         {% endif %}
     </div>
-    <div class="flex gap-2">
+    <div class="flex flex-col gap-3 shrink-0">
         {% if "add_issues" in user_perms %}
-        <a href="{% url 'projects:issue_create' project.identifier %}" class="btn-primary">
-            + Nouveau ticket
+        <a href="{% url 'projects:issue_create' project.identifier %}"
+           class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white font-semibold text-sm shadow transition-colors"
+           style="background-color: var(--rm-blue-btn);"
+           onmouseover="this.style.backgroundColor='var(--rm-blue-btn-hover)'"
+           onmouseout="this.style.backgroundColor='var(--rm-blue-btn)'">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nouveau ticket
         </a>
         {% endif %}
         {% if "manage_project" in user_perms %}
-        <a href="{% url 'projects:settings' project.identifier %}" class="btn-secondary">
+        <a href="{% url 'projects:settings' project.identifier %}"
+           class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm border border-gray-300 bg-white text-gray-700 shadow-sm transition-colors hover:bg-gray-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
             Paramètres
         </a>
         {% endif %}
@@ -33,7 +50,7 @@
 <!-- Navigation du projet -->
 <nav class="project-nav flex gap-1 border-b border-gray-200 mb-6">
     <a href="{{ project.get_absolute_url }}" class="active">Aperçu</a>
-    <a href="{% url 'projects:issue_list' project.identifier %}" class="{% if 'issues' in request.path %}active{% endif %}">Tickets</a>
+    <a href="{% url 'projects:issue_list' project.identifier %}">Tickets</a>
     <a href="{% url 'projects:roadmap' project.identifier %}">Roadmap</a>
     {% if "view_issues" in user_perms %}
     <a href="{% url 'projects:gantt' project.identifier %}">Gantt</a>
@@ -48,13 +65,19 @@
 
 <!-- Membres -->
 <div>
-    <h2 class="text-lg font-semibold mb-3">Membres</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <h2 class="text-lg font-semibold mb-3 text-gray-900">Membres</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         {% for m in project.memberships.all %}
-        <div class="bg-white rounded-lg shadow px-3 py-2">
-            <div class="font-medium text-sm">{{ m.user.get_full_name }}</div>
-            <div class="text-xs text-gray-400">
-                {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
+            <div class="inline-flex items-center justify-center w-9 h-9 rounded-full text-white text-sm font-bold shrink-0"
+                 style="background-color: var(--rm-blue-btn);">
+                {{ m.user.first_name|first|upper }}{{ m.user.last_name|first|upper }}
+            </div>
+            <div class="min-w-0">
+                <div class="font-medium text-sm text-gray-900 truncate">{{ m.user.get_full_name }}</div>
+                <div class="text-xs text-gray-400 truncate">
+                    {% for role in m.roles.all %}{{ role }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </div>
             </div>
         </div>
         {% endfor %}
