@@ -23,6 +23,17 @@
                 <div>
                     <div class="text-xs text-gray-400 mb-1">{{ issue.tracker }} #{{ issue.pk }}</div>
                     <h1 class="text-xl font-bold leading-snug">{{ issue.subject }}</h1>
+                    {% if issue.project.issue_prefix %}
+                    <div class="flex items-center gap-2 mt-2">
+                        <code class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-mono border border-gray-200">
+                            {{ issue.git_branch }}
+                        </code>
+                        <button onclick="navigator.clipboard.writeText('{{ issue.git_branch }}'); this.textContent='✓ Copié'; setTimeout(()=>this.textContent='Copier', 1500);"
+                                class="text-xs text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
+                            Copier
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="flex items-center gap-2 shrink-0 ml-4">
                     {% include "issues/_watch_button.html" %}

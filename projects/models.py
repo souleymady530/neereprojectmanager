@@ -58,6 +58,12 @@ class Project(models.Model):
         help_text="Identifiant unique utilisé dans les URL (ex : mon-projet)",
     )
     description = models.TextField("description", blank=True)
+    issue_prefix = models.CharField(
+        "préfixe tickets",
+        max_length=20,
+        blank=True,
+        help_text="Préfixe pour les noms de branche git (ex: RIIBO → branche RIIBO-12)",
+    )
     parent = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,

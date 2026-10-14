@@ -5,7 +5,7 @@ from .models import Project, Membership, Role, PERMISSION_CODES, ALL_PERMISSIONS
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ["name", "identifier", "description", "parent", "is_public"]
+        fields = ["name", "identifier", "description", "issue_prefix", "parent", "is_public"]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
         }

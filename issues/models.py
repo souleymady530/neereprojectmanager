@@ -158,6 +158,11 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return reverse("issues:detail", kwargs={"pk": self.pk})
 
+    @property
+    def git_branch(self):
+        prefix = self.project.issue_prefix.strip().upper() if self.project.issue_prefix else self.project.identifier.upper()
+        return f"{prefix}-{self.pk}"
+
     def allowed_statuses_for(self, user):
         """Retourne les statuts vers lesquels l'utilisateur peut transitionner."""
         from projects.models import Membership

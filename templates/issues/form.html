@@ -209,7 +209,7 @@
 <script>
     const descArea = document.getElementById("id_description");
     if (descArea) {
-        new EasyMDE({
+        const easyMDE = new EasyMDE({
             element: descArea,
             spellChecker: false,
             autofocus: false,
@@ -224,6 +224,11 @@
             ],
             status: false,
             minHeight: "200px",
+        });
+
+        // Forcer la sync EasyMDE → textarea avant soumission
+        descArea.closest("form").addEventListener("submit", function() {
+            easyMDE.codemirror.save();
         });
     }
 </script>

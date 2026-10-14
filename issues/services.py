@@ -89,6 +89,12 @@ TRACKED_FIELDS = {
         lambda issue: f"#{issue.parent_id}" if issue.parent_id else None,
         lambda v: f"#{v.pk}" if v else None,
     ),
+    "is_evaluated": (
+        "is_evaluated",
+        "Évalué",
+        lambda issue: str(issue.is_evaluated),
+        lambda v: str(v),
+    ),
 }
 
 
