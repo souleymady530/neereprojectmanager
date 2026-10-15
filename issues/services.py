@@ -137,7 +137,12 @@ def update_issue(issue: Issue, user, data: dict, note: str = "") -> Journal | No
             new_value=new_label,
         ))
 
-    # Sauvegarder quoi qu'il arrive (l'instance a déjà les nouvelles valeurs)
+        # Appliquer la nouvelle valeur sur l'instance si elle ne l'a pas déjà
+        # (cas Kanban/API : l'instance n'est pas modifiée par un ModelForm)
+        if getattr(issue, id_attr) == old_id:
+            setattr(issue, field_name, new_value)
+
+    # Sauvegarder quoi qu'il arrive
     issue.save()
 
     if not details and not note:
