@@ -165,18 +165,33 @@ class Issue(models.Model):
 
     def allowed_statuses_for(self, user):
         """Retourne les statuts vers lesquels l'utilisateur peut transitionner."""
-        from projects.models import Membership
+        all_statuses = IssueStatus.objects.all()
+
+        # Superuser ou sans projet → tous les statuts
+        if user.is_superuser:
+            return all_statuses
+
+        from projects.models import Membership, PERMISSION_CODES
         try:
             membership = Membership.objects.get(user=user, project=self.project)
             role_ids = membership.roles.values_list("id", flat=True)
         except Membership.DoesNotExist:
             return IssueStatus.objects.none()
 
+        # Gestionnaire de projet → tous les statuts
+        from projects.models import Role
+        if Role.objects.filter(pk__in=role_ids, permissions__contains="manage_project").exists():
+            return all_statuses
+
         allowed_ids = WorkflowTransition.objects.filter(
             tracker=self.tracker,
             role_id__in=role_ids,
             old_status=self.status,
         ).values_list("new_status_id", flat=True)
+
+        # Si aucune transition définie pour ce tracker/rôle, afficher tous les statuts
+        if not WorkflowTransition.objects.filter(tracker=self.tracker, role_id__in=role_ids).exists():
+            return all_statuses
 
         return IssueStatus.objects.filter(pk__in=allowed_ids)
 

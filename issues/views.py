@@ -450,7 +450,7 @@ class KanbanMoveView(LoginRequiredMixin, View):
             return JsonResponse({"ok": False, "error": "Statut introuvable"}, status=400)
 
         allowed = issue.allowed_statuses_for(request.user)
-        if new_status not in allowed and not request.user.is_superuser:
+        if new_status not in allowed:
             return JsonResponse({"ok": False, "error": "Transition non autorisée"}, status=403)
 
         update_issue(issue, request.user, {"status": new_status})
