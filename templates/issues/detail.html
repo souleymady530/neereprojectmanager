@@ -65,6 +65,51 @@
             {% endif %}
         </div>
 
+        <!-- Pièces jointes -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-5 py-4">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                </svg>
+                Pièces jointes
+            </h2>
+
+            <div id="attachments-list" class="space-y-1 mb-3">
+                {% for att in issue.attachments.all %}
+                <div class="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-gray-50 group" id="att-{{ att.pk }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    <a href="{{ att.file.url }}" target="_blank"
+                       class="text-sm flex-1 truncate" style="color: var(--rm-blue);">{{ att.filename }}</a>
+                    <span class="text-xs text-gray-400 shrink-0">{{ att.size_display }}</span>
+                    {% if "edit_issues" in user_perms or att.uploaded_by == request.user %}
+                    <button onclick="deleteAttachment({{ att.pk }})"
+                            class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p class="text-xs text-gray-400" id="no-attachments">Aucune pièce jointe.</p>
+                {% endfor %}
+            </div>
+
+            {% if "edit_issues" in user_perms %}
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter des fichiers
+                <input type="file" multiple class="hidden" id="attachment-input"
+                       onchange="uploadAttachments(this)">
+            </label>
+            <div id="upload-progress" class="hidden mt-2 text-xs text-gray-400">Envoi en cours…</div>
+            {% endif %}
+        </div>
+
         <!-- Historique et commentaires -->
         {% if issue.journals.exists %}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 px-5 pt-5 pb-2">
@@ -302,6 +347,68 @@
         });
         document.querySelector("form[hx-post]").addEventListener("htmx:afterRequest", function(e) {
             if (e.detail.successful) easyMDE.value("");
+        });
+    }
+
+    // ── Pièces jointes ────────────────────────────────────────
+    const CSRF = document.body.getAttribute('hx-headers')
+        ? JSON.parse(document.body.getAttribute('hx-headers'))['X-CSRFToken']
+        : '{{ csrf_token }}';
+
+    function uploadAttachments(input) {
+        const files = input.files;
+        if (!files.length) return;
+        const progress = document.getElementById('upload-progress');
+        progress.classList.remove('hidden');
+
+        const formData = new FormData();
+        for (const f of files) formData.append('files', f);
+
+        fetch('{% url "issues:attachment_upload" issue.pk %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            progress.classList.add('hidden');
+            const list = document.getElementById('attachments-list');
+            const empty = document.getElementById('no-attachments');
+            if (empty) empty.remove();
+            (data.attachments || []).forEach(att => {
+                const div = document.createElement('div');
+                div.id = 'att-' + att.id;
+                div.className = 'flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-gray-50 group';
+                div.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    <a href="${att.url}" target="_blank" class="text-sm flex-1 truncate" style="color:var(--rm-blue)">${att.filename}</a>
+                    <span class="text-xs text-gray-400 shrink-0">${att.size}</span>
+                    <button onclick="deleteAttachment(${att.id})" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>`;
+                list.appendChild(div);
+            });
+            input.value = '';
+        })
+        .catch(() => { progress.textContent = 'Erreur lors de l\'envoi.'; });
+    }
+
+    function deleteAttachment(id) {
+        if (!confirm('Supprimer cette pièce jointe ?')) return;
+        fetch(`/issues/attachments/${id}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                const el = document.getElementById('att-' + id);
+                if (el) el.remove();
+            }
         });
     }
 </script>

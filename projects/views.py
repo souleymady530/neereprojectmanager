@@ -9,7 +9,7 @@ from django.views.generic import (
 )
 
 from core.permissions import ProjectPermissionRequiredMixin, get_user_project_permissions
-from .models import Project, Membership, Role, ProjectInvitation
+from .models import Project, Membership, Role, ProjectInvitation, GitWebhook
 from .forms import ProjectForm, MembershipForm
 
 
@@ -116,6 +116,10 @@ class ProjectSettingsView(ProjectPermissionRequiredMixin, TemplateView):
             self.request.user.is_superuser
             or self.project.created_by_id == self.request.user.pk
         )
+        from .models import GitWebhook
+        from issues.models import IssueStatus
+        ctx["webhook"] = GitWebhook.objects.filter(project=self.project).first()
+        ctx["issue_statuses"] = IssueStatus.objects.all()
         return ctx
 
 
@@ -219,6 +223,22 @@ class InvitationRevokeView(ProjectPermissionRequiredMixin, View):
         inv.delete()
         messages.success(request, "Invitation révoquée.")
         return redirect(reverse("projects:settings", kwargs={"identifier": self.project.identifier}))
+
+
+class WebhookConfigureView(ProjectPermissionRequiredMixin, View):
+    permission_required = "manage_project"
+
+    def post(self, request, identifier):
+        hook, _ = GitWebhook.objects.get_or_create(project=self.project)
+        close_status_id = request.POST.get("close_status_id") or None
+        if close_status_id:
+            from issues.models import IssueStatus
+            hook.close_status = IssueStatus.objects.filter(pk=close_status_id).first()
+        else:
+            hook.close_status = None
+        hook.save()
+        messages.success(request, "Webhook Git configuré.")
+        return redirect(reverse("projects:settings", kwargs={"identifier": identifier}))
 
 
 class GanttView(ProjectPermissionRequiredMixin, View):

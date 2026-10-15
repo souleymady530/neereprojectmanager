@@ -107,6 +107,32 @@ class Project(models.Model):
         return self.status == self.STATUS_ACTIVE
 
 
+class GitWebhook(models.Model):
+    """Token secret pour recevoir les webhooks GitHub/GitLab et fermer des tickets."""
+    project = models.OneToOneField(
+        Project, on_delete=models.CASCADE, related_name="git_webhook"
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    close_status = models.ForeignKey(
+        "issues.IssueStatus",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="statut de fermeture",
+        help_text="Statut appliqué quand un commit contient 'fixes #N' ou 'closes #N'",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "webhook git"
+
+    def __str__(self):
+        return f"Webhook {self.project}"
+
+    def get_endpoint_url(self):
+        return reverse("projects:git_webhook", kwargs={"token": self.token})
+
+
 class Membership(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

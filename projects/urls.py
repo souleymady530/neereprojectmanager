@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from .webhook_views import GitWebhookView
+
 from issues.views import IssueListView, IssueCreateView, KanbanView, IssueImportView
 from versions.views import RoadmapView, VersionCreateView, VersionUpdateView, VersionDeleteView
 from timetracking.views import TimeEntryListView, TimeEntryCreateView, TimeReportView
@@ -37,6 +39,9 @@ urlpatterns = [
     path("<slug:identifier>/wiki/<slug:slug>/revision/<int:version>/", wiki_views.WikiPageRevisionView.as_view(), name="wiki_revision"),
     path("<slug:identifier>/wiki/<slug:slug>/revision/<int:version>/rollback/", wiki_views.WikiPageRollbackView.as_view(), name="wiki_rollback"),
     path("<slug:identifier>/wiki/<slug:slug>/delete/", wiki_views.WikiPageDeleteView.as_view(), name="wiki_delete"),
+    # Webhooks Git
+    path("webhooks/git/<uuid:token>/", GitWebhookView.as_view(), name="git_webhook"),
+    path("<slug:identifier>/webhook/", views.WebhookConfigureView.as_view(), name="webhook_configure"),
     # Gantt
     path("<slug:identifier>/gantt/", views.GanttView.as_view(), name="gantt"),
     # Versions + roadmap

@@ -247,6 +247,48 @@
     </div>
 </div>
 
+<!-- Webhook Git -->
+<div class="mt-8">
+    <h2 class="text-lg font-semibold mb-3">Webhook Git</h2>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        {% if webhook %}
+        <p class="text-sm text-gray-600 mb-3">
+            Configure cette URL dans GitHub / GitLab pour fermer automatiquement des tickets
+            via les messages de commit (<code class="bg-gray-100 px-1 rounded">fixes #12</code>,
+            <code class="bg-gray-100 px-1 rounded">closes #12</code>).
+        </p>
+        <div class="flex items-center gap-2 mb-4">
+            <input type="text" readonly
+                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'projects:git_webhook' webhook.token %}"
+                   class="flex-1 text-xs font-mono bg-gray-50"
+                   onclick="this.select(); navigator.clipboard.writeText(this.value);"
+                   title="Cliquer pour copier">
+            <button onclick="navigator.clipboard.writeText(document.querySelector('[title=\'Cliquer pour copier\']').value); this.textContent='✓'; setTimeout(()=>this.textContent='Copier',1500);"
+                    class="btn-secondary text-xs shrink-0">Copier</button>
+        </div>
+        <form method="post" action="{% url 'projects:webhook_configure' project.identifier %}">
+            {% csrf_token %}
+            <label class="block text-sm font-medium text-gray-700 mb-1">Statut de fermeture</label>
+            <div class="flex gap-2">
+                <select name="close_status_id" class="text-sm">
+                    <option value="">— ne pas changer le statut —</option>
+                    {% for status in issue_statuses %}
+                    <option value="{{ status.pk }}" {% if webhook.close_status_id == status.pk %}selected{% endif %}>{{ status.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-primary text-sm">Enregistrer</button>
+            </div>
+        </form>
+        {% else %}
+        <p class="text-sm text-gray-500 mb-3">Aucun webhook configuré pour ce projet.</p>
+        <form method="post" action="{% url 'projects:webhook_configure' project.identifier %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Activer le webhook Git</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}

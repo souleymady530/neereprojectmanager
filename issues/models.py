@@ -249,3 +249,33 @@ class Watcher(models.Model):
 
     class Meta:
         unique_together = [("issue", "user")]
+
+
+def attachment_upload_path(instance, filename):
+    return f"attachments/issues/{instance.issue_id}/{filename}"
+
+
+class Attachment(models.Model):
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="attachments")
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+    file = models.FileField("fichier", upload_to=attachment_upload_path)
+    filename = models.CharField("nom du fichier", max_length=255)
+    file_size = models.PositiveIntegerField("taille (octets)", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "pièce jointe"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return self.filename
+
+    @property
+    def size_display(self):
+        if self.file_size < 1024:
+            return f"{self.file_size} o"
+        elif self.file_size < 1024 * 1024:
+            return f"{self.file_size / 1024:.1f} Ko"
+        return f"{self.file_size / (1024 * 1024):.1f} Mo"
