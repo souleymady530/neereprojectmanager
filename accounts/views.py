@@ -68,8 +68,14 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
     def form_valid(self, form):
+        user = form.save(commit=False)
+        if self.request.POST.get("clear_avatar") == "1":
+            if user.avatar:
+                user.avatar.delete(save=False)
+            user.avatar = None
+        user.save()
         messages.success(self.request, "Profil mis à jour.")
-        return super().form_valid(form)
+        return redirect(self.success_url)
 
 
 class MyPageView(LoginRequiredMixin, TemplateView):

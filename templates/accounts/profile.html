@@ -9,12 +9,58 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-xl">
+<div class="max-w-2xl">
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Mon profil</h1>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="post" enctype="multipart/form-data" class="space-y-5">
-            {% csrf_token %}
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+
+        <!-- Avatar -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Photo de profil</h2>
+            <div class="flex items-center gap-6">
+
+                <!-- Aperçu actuel -->
+                <div class="relative shrink-0">
+                    <div id="avatar-preview"
+                         class="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-200 bg-gray-100 flex items-center justify-center">
+                        {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="Avatar"
+                             class="w-full h-full object-cover" id="avatar-img">
+                        {% else %}
+                        <span class="text-3xl font-bold text-gray-400" id="avatar-initials">
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if user.avatar %}
+                    <button type="button" onclick="clearAvatar()"
+                            class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 transition-colors"
+                            title="Supprimer la photo">✕</button>
+                    {% endif %}
+                </div>
+
+                <!-- Zone upload -->
+                <div class="flex-1">
+                    <label for="avatar-input"
+                           class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-sm text-gray-500">Cliquer pour choisir une photo</span>
+                        <span class="text-xs text-gray-400 mt-1">JPG, PNG, WebP — max 5 Mo</span>
+                    </label>
+                    <input type="file" id="avatar-input" name="avatar"
+                           accept="image/*" class="hidden"
+                           onchange="previewAvatar(this)">
+                    <input type="hidden" name="clear_avatar" id="clear-avatar-input" value="">
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Informations personnelles</h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -34,53 +80,71 @@
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Adresse e-mail <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Adresse e-mail <span class="text-red-500">*</span></label>
                 {{ form.email }}
                 {% if form.email.errors %}
                 <p class="text-sm mt-1" style="color:var(--rm-red);">{{ form.email.errors.0 }}</p>
                 {% endif %}
             </div>
 
-            {% if form.bio %}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bio</label>
                 {{ form.bio }}
             </div>
-            {% endif %}
+        </div>
 
-            {% if form.avatar %}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Avatar</label>
-                {{ form.avatar }}
-            </div>
-            {% endif %}
+        <!-- Infos du compte -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Informations du compte</h2>
+            <dl class="space-y-2 text-sm">
+                <div class="flex gap-2">
+                    <dt class="text-gray-400 w-36 shrink-0">Identifiant</dt>
+                    <dd class="font-mono text-gray-700">{{ user.username }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="text-gray-400 w-36 shrink-0">Membre depuis</dt>
+                    <dd class="text-gray-700">{{ user.date_joined|date:"d/m/Y" }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="text-gray-400 w-36 shrink-0">Dernière connexion</dt>
+                    <dd class="text-gray-700">{{ user.last_login|date:"d/m/Y à H:i"|default:"–" }}</dd>
+                </div>
+            </dl>
+        </div>
 
-            <div class="pt-3 border-t border-gray-100 flex gap-3">
-                <button type="submit" class="btn-primary">Enregistrer</button>
-                <a href="{% url 'my:page' %}" class="btn-secondary">Annuler</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Infos du compte -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-4">
-        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Informations du compte</h2>
-        <dl class="space-y-2 text-sm">
-            <div class="flex gap-2">
-                <dt class="text-gray-400 w-32 shrink-0">Identifiant</dt>
-                <dd class="font-mono text-gray-700">{{ user.username }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="text-gray-400 w-32 shrink-0">Membre depuis</dt>
-                <dd class="text-gray-700">{{ user.date_joined|date:"d/m/Y" }}</dd>
-            </div>
-            <div class="flex gap-2">
-                <dt class="text-gray-400 w-32 shrink-0">Dernière connexion</dt>
-                <dd class="text-gray-700">{{ user.last_login|date:"d/m/Y à H:i"|default:"–" }}</dd>
-            </div>
-        </dl>
-    </div>
+        <div class="flex gap-3">
+            <button type="submit" class="btn-primary">Enregistrer</button>
+            <a href="{% url 'my:page' %}" class="btn-secondary">Annuler</a>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewAvatar(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Fichier trop volumineux (max 5 Mo).');
+        input.value = '';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('avatar-preview');
+        preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+    };
+    reader.readAsDataURL(file);
+    document.getElementById('clear-avatar-input').value = '';
+}
+
+function clearAvatar() {
+    const preview = document.getElementById('avatar-preview');
+    const initials = "{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}";
+    preview.innerHTML = `<span class="text-3xl font-bold text-gray-400">${initials}</span>`;
+    document.getElementById('avatar-input').value = '';
+    document.getElementById('clear-avatar-input').value = '1';
+}
+</script>
 {% endblock %}

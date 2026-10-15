@@ -178,7 +178,22 @@
             <!-- Assigné à -->
             <div>
                 <div class="text-xs text-gray-400 uppercase mb-1">Assigné à</div>
-                <span>{{ issue.assigned_to|default:"–" }}</span>
+                {% if issue.assigned_to %}
+                <div class="flex items-center gap-2">
+                    {% if issue.assigned_to.avatar %}
+                    <img src="{{ issue.assigned_to.avatar.url }}" alt=""
+                         class="w-6 h-6 rounded-full object-cover shrink-0">
+                    {% else %}
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-semibold shrink-0"
+                          style="background-color: var(--rm-blue-btn);">
+                        {{ issue.assigned_to.first_name|first|upper }}{{ issue.assigned_to.last_name|first|upper }}
+                    </span>
+                    {% endif %}
+                    <span>{{ issue.assigned_to.get_full_name }}</span>
+                </div>
+                {% else %}
+                <span class="text-gray-400">–</span>
+                {% endif %}
             </div>
 
             {% if issue.fixed_version %}

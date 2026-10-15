@@ -69,10 +69,15 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         {% for m in project.memberships.all %}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
+            {% if m.user.avatar %}
+            <img src="{{ m.user.avatar.url }}" alt=""
+                 class="w-9 h-9 rounded-full object-cover shrink-0">
+            {% else %}
             <div class="inline-flex items-center justify-center w-9 h-9 rounded-full text-white text-sm font-bold shrink-0"
                  style="background-color: var(--rm-blue-btn);">
                 {{ m.user.first_name|first|upper }}{{ m.user.last_name|first|upper }}
             </div>
+            {% endif %}
             <div class="min-w-0">
                 <div class="font-medium text-sm text-gray-900 truncate">{{ m.user.get_full_name }}</div>
                 <div class="text-xs text-gray-400 truncate">

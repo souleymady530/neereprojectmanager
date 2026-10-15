@@ -336,10 +336,15 @@
                     style="hover:background-color: var(--rm-nav-dark);"
                     onmouseover="this.style.backgroundColor='#2e3a47'"
                     onmouseout="this.style.backgroundColor='transparent'">
+                {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt=""
+                     class="w-7 h-7 rounded-full object-cover shrink-0">
+                {% else %}
                 <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-semibold"
                       style="background-color: var(--rm-blue-btn);">
                     {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
                 </span>
+                {% endif %}
                 <span class="hidden sm:inline text-gray-200">{{ user.get_full_name|default:user.username }}</span>
                 <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
